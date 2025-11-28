@@ -4,7 +4,7 @@ from collections import deque
 
 class Board:
 
-    rng = np.random.default_rng(42)
+    rng = np.random.default_rng()
 
     def __init__(self, rows=10, cols=10):
         self.rows = rows
@@ -17,69 +17,50 @@ class Board:
         row, col = position
         return row < 0 or row >= self.rows or col < 0 or col >= self.cols
 
-    def initialize_board(self):
-        x = Board.rng.integers(0, self.rows)
-        y = Board.rng.integers(0, self.cols)
-        self.snake.append((x, y))
-        self.board[x, y] = 'H'
-        for _ in range(2):
-            directions = ['up', 'down', 'left', 'right']
-            dir = Board.rng.choice(directions)
-            if dir == 'up':
-                if self.is_oob((x, y - 1)) or self.board[x, y - 1] != '0':
-                    directions.remove('up')
-                    dir = Board.rng.choice(directions)
-                else:
-                    y -= 1
-            if dir == 'down':
-                if self.is_oob((x, y + 1)) or self.board[x, y + 1] != '0':
-                    directions.remove('down')
-                    dir = Board.rng.choice(directions)
-                else:
-                    y += 1
-            if dir == 'left':
-                if self.is_oob((x - 1, y)) or self.board[x - 1, y] != '0':
-                    directions.remove('left')
-                    dir = Board.rng.choice(directions)
-                else:
-                    x -= 1
-            if dir == 'right':
-                if self.is_oob((x + 1, y)) or self.board[x + 1, y] != '0':
-                    directions.remove('right')
-                    dir = Board.rng.choice(directions)
-                else:
-                    x += 1
-            self.snake.append((x, y))
-            self.board[x, y] = 'S'
-            self.place_apple('green')
-            self.place_apple('green')
-            self.place_apple('red')
+    def move_coords(self, position, direction):
+        row, col = position
+        if direction == 'up':
+            return (row - 1, col)
+        if direction == 'down':
+            return (row + 1, col)
+        if direction == 'left':
+            return (row, col - 1)
+        if direction == 'right':
+            return (row, col + 1)
+        raise ValueError("Direction must be 'up', 'down', 'left', or 'right'")
 
-    def place_apple(self, color):
-        pos = Board.rng.choice([(x, y) for x in range(self.rows)
-                                for y in range(self.cols)
-                                if self.board[x, y] == '0'])
-        if color == 'green':
-            self.board[pos] = 'G'
-        elif color == 'red':
-            self.board[pos] = 'R'
-        else:
-            raise ValueError("Apple color must be 'green' or 'red'")
+    def initialize_board(self):
+        pos = tuple(self.rng.choice([(y, x) for y in range(self.rows)
+                                    for x in range(self.cols)]))
+        self.snake.append(pos)
+        self.board[pos] = 'H'
+        for _ in range(2):
+            moved = ()
+            directions = ['up', 'down', 'left', 'right']
+            while True:
+                dir = self.rng.choice(directions)
+                moved = self.move_coords(pos, dir)
+                if self.is_oob(moved) or self.board[moved] != '0':
+                    directions.remove(dir)
+                else:
+                    pos = moved
+                    break
+            self.snake.append(pos)
+            self.board[pos] = 'S'
+
+        self.place_apple('G')
+        self.place_apple('G')
+        self.place_apple('R')
+
+    def place_apple(self, character):
+        pos = tuple(self.rng.choice([(y, x) for y in range(self.rows)
+                                    for x in range(self.cols)
+                                    if self.board[y, x] == '0']))
+        self.board[pos] = character
 
     def move_snake(self, direction):
-        head_x, head_y = self.snake[0]
-
-        if direction == 'up':
-            new_head = (head_x - 1, head_y)
-        elif direction == 'down':
-            new_head = (head_x + 1, head_y)
-        elif direction == 'left':
-            new_head = (head_x, head_y - 1)
-        elif direction == 'right':
-            new_head = (head_x, head_y + 1)
-        else:
-            raise ValueError(
-                "Direction must be 'up', 'down', 'left', or 'right'")
+        old_head = self.snake[0]
+        new_head = self.move_coords(old_head, direction)
 
         if self.is_oob(new_head) or self.board[new_head] == 'S':
             return 'dead'
@@ -87,18 +68,47 @@ class Board:
         tile = self.board[new_head]
         self.snake.appendleft(new_head)
         self.board[new_head] = 'H'
-        self.board[head_x, head_y] = 'S'
+        self.board[old_head] = 'S'
 
         if tile == 'G':
-            self.place_apple('green')
+            self.place_apple('G')
             return 'green'
+
+        self.board[self.snake.pop()] = '0'
         if tile == 'R':
             if len(self.snake) == 1:
                 return 'dead'
             self.board[self.snake.pop()] = '0'
-            self.board[self.snake.pop()] = '0'
-            self.place_apple('red')
+            self.place_apple('R')
             return 'red'
 
-        self.board[self.snake.pop()] = '0'
         return 'clear'
+
+    def __str__(self):
+        return '\n'.join(' '.join(row) for row in self.board)
+
+
+if __name__ == "__main__":
+    board = Board(10, 10)
+    print(board, end='\n\n')
+    while True:
+        direction = ''
+        d = input("direction: ")
+        if d == 'z':
+            direction = 'up'
+        elif d == 's':
+            direction = 'down'
+        elif d == 'q':
+            direction = 'left'
+        elif d == 'd':
+            direction = 'right'
+        else:
+            print("invalid direction")
+            continue
+        status = board.move_snake(direction)
+        print(board)
+        if status == 'dead':
+            print(status)
+            break
+        else:
+            print(status, end='\n\n')
