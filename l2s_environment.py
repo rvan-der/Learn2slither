@@ -3,13 +3,15 @@ from collections import deque
 from l2s_enums import Direction as Dr
 from l2s_enums import Tile as Tl
 from l2s_enums import Status as St
+from l2s_rewards import RewardStructure
 
 
 class State:
 
     def __init__(self, horizontal, vertical):
-        self.hz = horizontal
-        self.vt = vertical
+        self.hz = 'W' + horizontal + 'W'
+        self.vt = 'W' + vertical + 'W'
+        self.key = self.hz + self.vt
 
     def __str__(self):
         s = ''
@@ -26,8 +28,7 @@ class Environment:
 
     rng = np.random.default_rng()
 
-    def __init__(self, rewards, rows=10, cols=10, initial_len=3):
-        self.rewards = rewards
+    def __init__(self, rows=10, cols=10, initial_len=3):
         self.rows = rows
         self.cols = cols
         self.initial_len = initial_len
@@ -35,9 +36,6 @@ class Environment:
 
     def __str__(self):
         return '\n'.join(' '.join(row) for row in self.board)
-
-    def set_rewards(self, rewards):
-        self.rewards = rewards
 
     def is_oob(self, position):  # oob = out of bounds
         row, col = position
@@ -67,7 +65,6 @@ class Environment:
         self.snake.append(pos)
         self.board[pos] = str(Tl.HEAD)
         for _ in range(self.initial_len - 1):
-            moved = ()
             directions = list(Dr)
             while True:
                 dir = self.rng.choice(directions)
@@ -128,16 +125,15 @@ class Environment:
         vt = ''.join(self.board[i, x] for i in range(self.rows))
         return State(hz, vt)
 
-    def get_reward(self):
-        return self.rewards[self.status]
+    def get_reward(self, reward_struct):
+        return reward_struct.get(self.status, len(self.snake))
 
 
 if __name__ == "__main__":
-    rewards = {St.ALIVE: 0, St.DEAD: -2,
-               St.GREEN: 1, St.RED: -1}
-    env = Environment(rewards, 10, 10)
+    rewards = RewardStructure(target_len=10, alive=0.1)
+    env = Environment(10, 10)
     print(env)
-    print(env.status)
+    print(str(env.status) + ' (' + str(env.get_reward(rewards)) + ')')
     print(env.get_state(), end='\n\n')
     while True:
         try:
@@ -147,13 +143,13 @@ if __name__ == "__main__":
             continue
         env.move_snake(direction)
         print(env)
-        print(str(env.status))
+        print(str(env.status) + ' (' + str(env.get_reward(rewards)) + ')')
         if env.status == St.DEAD:
             _continue = input("restart? (y/n): ").lower()
             if _continue == 'y' or _continue == 'yes':
                 env.initialize_env()
                 print(env)
-                print(env.status)
+                print(str(env.status) + ' (' + str(env.get_reward(rewards)) + ')')
                 print(env.get_state(), end='\n\n')
             else:
                 break

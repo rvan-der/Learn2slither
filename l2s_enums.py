@@ -1,24 +1,22 @@
-from enum import Enum, StrEnum, auto
+from enum import Enum, StrEnum, IntEnum
 
 
-class Direction(StrEnum):
-    UP = auto()
-    DOWN = auto()
-    LEFT = auto()
-    RIGHT = auto()
+class Direction(IntEnum):
+    UP = 0
+    DOWN = 1
+    LEFT = 2
+    RIGHT = 3
 
     @staticmethod
     def from_str(label):
         lower = label.lower()
-        if lower in map(str, Direction):
-            return Direction(lower)
-        if lower == 'z':
+        if lower in ['z', 'up']:
             return Direction.UP
-        if lower == 's':
+        if lower in ['s', 'down']:
             return Direction.DOWN
-        if lower == 'q':
+        if lower in ['q', 'left']:
             return Direction.LEFT
-        if lower == 'd':
+        if lower in ['d', 'right']:
             return Direction.RIGHT
         raise ValueError(f"Invalid direction: {label}")
 
