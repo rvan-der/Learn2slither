@@ -1,10 +1,10 @@
-from l2s_enums import Status as St
+from enums import Status as St
 import math
 
 
 class RewardStructure:
 
-    def __init__(self, alive=0, dead=-5, green=1, red=-1,
+    def __init__(self, alive=0.0, dead=-5.0, green=1.0, red=-1.0,
                  target_len=math.inf):
         if dead >= 0 or green <= 0 or red > 0:
             raise ValueError("Reward values must follow these constraints:\n" +
@@ -16,6 +16,20 @@ class RewardStructure:
             St.GREEN: green,
             St.RED: red
         }
+
+    def set_rewards(self, alive, dead, green, red):
+        if dead >= 0 or green <= 0 or red > 0:
+            raise ValueError("Reward values must follow these constraints:\n" +
+                             "dead < 0, green > 0, red <= 0")
+        self.rewards = {
+            St.ALIVE: alive,
+            St.DEAD: dead,
+            St.GREEN: green,
+            St.RED: red
+        }
+
+    def set_target_len(self, target_len):
+        self.target_len = target_len
 
     def get(self, status, length):
         base_rwd = self.rewards[status]

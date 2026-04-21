@@ -1,9 +1,9 @@
-from enum import Enum, StrEnum, IntEnum
+from enum import StrEnum, IntEnum
 
 
 class Direction(IntEnum):
-    UP = 0
-    DOWN = 1
+    DOWN = 0
+    UP = 1
     LEFT = 2
     RIGHT = 3
 
@@ -20,15 +20,19 @@ class Direction(IntEnum):
             return Direction.RIGHT
         raise ValueError(f"Invalid direction: {label}")
 
+    def __str__(self):
+        return self.name
 
-class Status(Enum):
-    ALIVE = 0
-    DEAD = 1
-    GREEN = 2
-    RED = 3
+
+class Status(StrEnum):
+    ALIVE = "alive"
+    DEAD = "dead"
+    GREEN = "green"
+    RED = "red"
 
 
 class Tile(StrEnum):
+    WALL = 'W'
     EMPTY = '0'
     HEAD = 'H'
     BODY = 'S'

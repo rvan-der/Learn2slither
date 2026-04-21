@@ -1,0 +1,9 @@
+<RCC>
+  <qresource>
+    <file>assets/snake_team_ai.jpeg</file>
+    <file>assets/create_snake_icon.png</file>
+    <file>assets/next_frame_icon.png</file>
+    <file>assets/pause_icon.png</file>
+    <file>assets/play_icon.png</file>
+  </qresource>
+</RCC>
