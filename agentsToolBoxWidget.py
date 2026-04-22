@@ -25,6 +25,5 @@ class AgentsToolBoxWidget(QWidget):
         self.layout.addWidget(self.episodesSpinBox, 0, 2)
 
     def trainAgent(self):
-        print(self.parent().__class__.__name__)
         self.toolBox.trainAgentSignal.emit(
             self.agent, self.episodesSpinBox.value())

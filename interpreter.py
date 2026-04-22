@@ -1,39 +1,52 @@
 import time
 from enums import Status as St
-from PySide6.QtCore import (QObject, Signal)
+from PySide6.QtCore import (QThread, Signal)
 
 
-class Trainer(QObject):
-
-    trainingFinished = Signal()
-    playSessionFinished = Signal(list, list, list)
-
-    def __init__(self, environment, parent=None):
+class Interpreter(QThread):
+    def __init__(self, environment, agent, sessions, parent=None):
         super().__init__(parent)
         self.env = environment
+        self.agent = agent
+        self.sessions = sessions
         self.paused = True
         self.print = True
         self.singleStep = False
         self.canceled = False
         self.delay = 0.1
 
+    # @Slot
     def set_delay(self, delay):
         self.delay = delay
 
+    # @Slot
     def set_paused(self, paused):
         self.paused = paused
 
+    # @Slot
     def set_print(self, _print):
         self.print = _print
 
+    # @Slot
     def single_step(self):
         self.singleStep = True
 
+    # @Slot
     def cancel(self):
         self.canceled = True
 
-    def qLearning(self, agent, episodes):
-        for e in range(episodes):
+
+class Trainer(Interpreter):
+
+    trainingFinished = Signal()
+
+    def __init__(self, environment, agent, sessions):
+        super().__init__(environment, agent, sessions)
+
+    # Q-learning algorithm
+    def run(self):
+        agent = self.agent
+        for e in range(self.sessions):
             if self.canceled:
                 break
 
@@ -45,7 +58,7 @@ class Trainer(QObject):
             if self.print:
                 if e > 0:
                     print("\n########################################\n")
-                print(f"Episode {e + 1}/{episodes}\n")
+                print(f"Episode {e + 1}/{self.sessions}\n")
 
             # hold while paused
             while self.paused and not self.singleStep and not self.canceled:
@@ -98,19 +111,28 @@ class Trainer(QObject):
                 q_new = q_old + agent.alpha * td_error
                 agent.qtable.set_qvalue(s, a, q_new)
 
-            if self.delay > 0 and e < episodes - 1:
+            if self.delay > 0 and e < self.sessions - 1:
                 time.sleep(self.delay * 2)
 
         if not self.canceled:
             agent.save_to_file(agent.name)
             self.trainingFinished.emit()
 
-    def playAgent(self, agent, episodes):
+
+class Player(Interpreter):
+
+    playSessionFinished = Signal(list, list, list)
+
+    def __init__(self, environment, agent, sessions, parent=None):
+        super().__init__(environment, agent, sessions, parent)
+
+    def run(self):
         rewards = []
         lengths = []
         times = []
+        agent = self.agent
 
-        for e in range(episodes):
+        for e in range(self.sessions):
             if self.canceled:
                 break
 
@@ -119,7 +141,7 @@ class Trainer(QObject):
             if self.print:
                 if e > 0:
                     print("\n########################################\n")
-                print(f"Game {e + 1}/{episodes}\n")
+                print(f"Game {e + 1}/{self.sessions}\n")
 
             while self.paused and not self.singleStep and not self.canceled:
                 continue

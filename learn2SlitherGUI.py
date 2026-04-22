@@ -8,9 +8,8 @@ from playerWidget import PlayerWidget
 from environment import Environment
 from agent import AgentFactory
 from rewards import RewardStructure
-from trainer import Trainer
+from interpreter import Trainer
 from PySide6.QtWidgets import (QApplication, QMainWindow, QSizePolicy)
-from PySide6.QtCore import (QThread)
 
 
 class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
@@ -19,13 +18,6 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
         self.setupUi(self)
 
         self.environment = environment
-
-        self.trainer = Trainer(environment)
-        self.trainer.trainingFinished.connect(self.training_finished)
-        self.trainerThread = QThread()
-        self.trainer.moveToThread(self.trainerThread)
-        self.trainerThread.start()
-        app.aboutToQuit.connect(self.quit_thread)
 
         self.boardWidget = BoardWidget(environment)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding,
@@ -37,9 +29,6 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding,
                                  QSizePolicy.Policy.Minimum)
         self.playerWidget.setSizePolicy(sizePolicy)
-        self.playerWidget.pausedChanged.connect(self.trainer.set_paused)
-        self.playerWidget.nextFrameButton.clicked.connect(
-            self.trainer.single_step)
         self.boardFrameLayout.insertWidget(1, self.playerWidget)
         self.playerWidget.setEnabled(False)
 
@@ -65,10 +54,14 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
         self.boardWidget.set_snake_colors(head_color, body_color)
         self.environment.init_empty_board()
 
-    def train_agent(self, agent, episodes):
+    def train_agent(self, agent, sessions):
         self.agentsToolBox.setEnabled(False)
         self.playerWidget.setEnabled(True)
-        self.trainer.qLearning(agent, episodes)
+        trainer = Trainer(self.environment, agent, sessions)
+        self.playerWidget.pausedChanged.connect(trainer.set_paused)
+        self.playerWidget.nextFrameButton.clicked.connect(trainer.single_step)
+        trainer.trainingFinished.connect(self.training_finished)
+        trainer.start()
 
     def training_finished(self):
         self.agentsToolBox.setEnabled(True)
