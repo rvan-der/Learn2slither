@@ -57,11 +57,11 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
     def train_agent(self, agent, sessions):
         self.agentsToolBox.setEnabled(False)
         self.playerWidget.setEnabled(True)
-        trainer = Trainer(self.environment, agent, sessions)
-        self.playerWidget.pausedChanged.connect(trainer.set_paused)
-        self.playerWidget.nextFrameButton.clicked.connect(trainer.single_step)
-        trainer.trainingFinished.connect(self.training_finished)
-        trainer.start()
+        self.trainer = Trainer(self.environment, agent, sessions)
+        self.playerWidget.pausedChanged.connect(self.trainer.set_paused)
+        self.playerWidget.nextFrameButton.clicked.connect(self.trainer.single_step)
+        self.trainer.trainingFinished.connect(self.training_finished)
+        self.trainer.start()
 
     def training_finished(self):
         self.agentsToolBox.setEnabled(True)
