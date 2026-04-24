@@ -8,6 +8,7 @@ from agentsToolBoxWidget import AgentsToolBoxWidget
 class AgentsToolBox(QToolBox):
 
     trainAgentSignal = Signal(Agent, int)
+    playAgentSignal = Signal(Agent, int)
 
     def __init__(self, parent=None):
         super().__init__(parent)

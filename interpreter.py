@@ -9,7 +9,7 @@ class Interpreter(QThread):
         self.env = environment
         self.agent = agent
         self.sessions = sessions
-        self.paused = True
+        self.paused = False
         self.print = True
         self.singleStep = False
         self.canceled = False
@@ -53,14 +53,18 @@ class Trainer(Interpreter):
                 time.sleep(self.delay)
 
             if self.print:
-                if e > 0:
-                    print("\n########################################\n")
+                print("\n########################################\n")
+                if e == 0:
+                    print("Starting training sessions.\n")
                 print(f"Episode {e + 1}/{self.sessions}\n")
 
             episode = []
             while self.env.status != St.DEAD and not self.canceled:
-                while self.paused and not self.singleStep:
+                while self.paused and not self.singleStep \
+                        and not self.canceled:
                     continue
+                if self.canceled:
+                    break
                 self.singleStep = False
                 state = self.env.get_state()
                 action = agent.choose_action(state)
@@ -71,7 +75,7 @@ class Trainer(Interpreter):
                                 'reward': reward})
                 if self.print:
                     print(f"\n{state}")
-                    print(f"\n{str(action)}")
+                    print(f"{str(action)}")
                 if self.delay > 0:
                     time.sleep(self.delay)
 
@@ -141,8 +145,10 @@ class Player(Interpreter):
             self.env.new_game()
 
             if self.print:
-                if e > 0:
-                    print("\n########################################\n")
+
+                print("\n########################################\n")
+                if e == 0:
+                    print("Starting play sessions.\n")
                 print(f"Game {e + 1}/{self.sessions}\n")
 
             if self.delay > 0:
@@ -151,8 +157,11 @@ class Player(Interpreter):
             total_reward = 0
             time_alive = 0
             while self.env.status != St.DEAD and not self.canceled:
-                while self.paused and not self.singleStep:
+                while self.paused and not self.singleStep \
+                        and not self.canceled:
                     continue
+                if self.canceled:
+                    break
                 self.singleStep = False
                 state = self.env.get_state()
                 action = agent.choose_action(state, training=False)
@@ -161,7 +170,7 @@ class Player(Interpreter):
                 time_alive += 1
                 if self.print:
                     print(f"\n{state}")
-                    print(f"\n{str(action)}")
+                    print(f"{str(action)}")
                 self.env.move_snake(action)
                 if self.delay > 0:
                     time.sleep(self.delay)

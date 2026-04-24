@@ -6,6 +6,11 @@ from enums import Direction as Dr, Tile as Tl
 from rewards import RewardStructure
 
 
+class NotAnAgentFile(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+
+
 class AgentFactory:
 
     instance = None
@@ -23,11 +28,94 @@ class AgentFactory:
         agent.set_color(self.random_color())
         return agent
 
+    def validate_file(self, data):
+        keys = {'td_n', 'epsilon', 'alpha', 'gamma', 'qtable', 'rewards',
+                'name', 'sessions', 'color'}
+        if not isinstance(data, dict) or set(data.keys()) != keys:
+            raise ValueError("Wrong data type.")
+
+        if not isinstance(data['td_n'], int) \
+                or data['td_n'] < 0:
+            raise ValueError("Wrong value for td_n.")
+
+        if not isinstance(data['epsilon'], float) \
+                and not isinstance(data['epsilon'], int) \
+                or data['epsilon'] < 0 \
+                or data['epsilon'] > 1:
+            raise ValueError("Wrong value for epsilon.")
+
+        if not isinstance(data['alpha'], float) \
+                and not isinstance(data['alpha'], int) \
+                or data['alpha'] < 0 \
+                or data['alpha'] > 1:
+            raise ValueError("Wrong value for alpha.")
+
+        if not isinstance(data['gamma'], float) \
+                and not isinstance(data['gammma'], int) \
+                or data['gamma'] < 0 \
+                or data['gamma'] > 1:
+            raise ValueError("Wrong value for gamma.")
+
+        if not isinstance(data['name'], str):
+            raise ValueError("Wrong data type for name.")
+
+        if not isinstance(data['sessions'], int) \
+                or data['sessions'] < 0:
+            raise ValueError("Wrong value for number of sessions")
+
+        if not isinstance(data['color'], list) \
+                or len(data['color']) != 3:
+            raise ValueError("Wrong data type for color.")
+        for c in data['color']:
+            if not isinstance(c, int) or c < 0 or c > 255:
+                raise ValueError("Wrong value in color.")
+
+        keys = {'rewards', 'target_len'}
+        if not isinstance(data['rewards'], dict) \
+                or set(data['rewards'].keys()) != keys:
+            raise ValueError("Wrong data type for reward structure.")
+
+        if isinstance(data['rewards']['target_len'], float):
+            if data['rewards']['target_len'] != float('inf'):
+                raise ValueError("Wrong value for target length.")
+        elif isinstance(data['rewards']['target_len'], int):
+            if data['rewards']['target_len'] < 0:
+                raise ValueError("Wrong value for target length.")
+        else:
+            raise ValueError("Wrong data type for target length.")
+
+        keys = {'alive', 'dead', 'green', 'red'}
+        if not isinstance(data['rewards']['rewards'], dict) \
+                or set(data['rewards']['rewards'].keys()) != keys:
+            raise ValueError("Wrong data type for reward values.")
+        for v in data['rewards']['rewards'].values():
+            if not isinstance(v, int) and not isinstance(v, float):
+                raise ValueError("Wrong data type for reward values.")
+
+        if not isinstance(data['qtable'], dict):
+            raise ValueError("Wrong data type for qtable.")
+        for state, actions in data['qtable']:
+            if not isinstance(state, str) or len(state) != 24:
+                raise ValueError(
+                    "Wrong data type for state key inside qtable."
+                )
+            for c in state:
+                if c not in "0WHSRG":
+                    raise ValueError("Wrong state key format inside qtable.")
+            if not isinstance(actions, list) or len(actions) != 4:
+                raise ValueError("Wrong data type for actions inside qtable.")
+            for a in actions:
+                if not isinstance(a, int) and not isinstance(a, float):
+                    raise ValueError(
+                        "Wrong data type for actions inside qtable."
+                    )
+
     def from_file(self, filepath):
         if not filepath.endswith(".l2s"):
-            raise 
+            raise NotAnAgentFile("Wrong file extension.")
         with open(filepath, 'r') as f:
             data = json.load(f)
+            self.validate_file(data)
             agent = Agent()
             agent.rewards.set_target_len(data['rewards']['target_len'])
             agent.rewards.set_rewards(

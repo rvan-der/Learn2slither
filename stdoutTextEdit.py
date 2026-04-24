@@ -1,7 +1,7 @@
 import sys
-from PySide6.QtWidgets import (QTextEdit, QFrame, QSizePolicy)
+from PySide6.QtWidgets import (QPlainTextEdit, QFrame, QSizePolicy)
 from PySide6.QtCore import (QObject, Signal)
-from PySide6.QtGui import (QTextCursor, QFont)
+from PySide6.QtGui import QFont
 
 
 class StdoutRedirect(QObject):
@@ -10,7 +10,7 @@ class StdoutRedirect(QObject):
 
     stdoutWritten = Signal(str)
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls):
         if cls.instance is None:
             cls.instance = super(StdoutRedirect, cls).__new__(cls)
         return cls.instance
@@ -23,7 +23,7 @@ class StdoutRedirect(QObject):
         pass
 
 
-class StdoutTextEdit(QTextEdit):
+class StdoutTextEdit(QPlainTextEdit):
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -44,16 +44,5 @@ class StdoutTextEdit(QTextEdit):
         self.setSizePolicy(sizePolicy)
 
         self.stdoutRedirect = StdoutRedirect()
-        self.stdoutRedirect.stdoutWritten.connect(self.append_text)
+        self.stdoutRedirect.stdoutWritten.connect(self.appendPlainText)
         sys.stdout = self.stdoutRedirect
-
-    def append_text(self, text):
-        scrollBar = self.verticalScrollBar()
-        atEnd = False
-        if scrollBar.value() == scrollBar.maximum():
-            atEnd = True
-        cursor = self.textCursor()
-        cursor.movePosition(QTextCursor.MoveOperation.End)
-        cursor.insertText(text)
-        if atEnd:
-            scrollBar.setValue(scrollBar.maximum())
