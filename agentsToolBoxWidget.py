@@ -9,7 +9,7 @@ class AgentsToolBoxWidget(QWidget):
         self.agent = agent
         self.toolBox = toolBox
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding,
-                                 QSizePolicy.Policy.Expanding)
+                                 QSizePolicy.Policy.Preferred)
         self.setSizePolicy(sizePolicy)
         self.layout = QGridLayout(self)
         self.layout.setSpacing(4)

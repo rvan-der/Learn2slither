@@ -13,25 +13,20 @@ class Interpreter(QThread):
         self.print = True
         self.singleStep = False
         self.canceled = False
-        self.delay = 0.1
+        self.delay = 0
 
-    # @Slot
     def set_delay(self, delay):
         self.delay = delay
 
-    # @Slot
     def set_paused(self, paused):
         self.paused = paused
 
-    # @Slot
     def set_print(self, _print):
         self.print = _print
 
-    # @Slot
     def single_step(self):
         self.singleStep = True
 
-    # @Slot
     def cancel(self):
         self.canceled = True
 
@@ -39,6 +34,7 @@ class Interpreter(QThread):
 class Trainer(Interpreter):
 
     trainingFinished = Signal()
+    trainingCanceled = Signal(int)
 
     def __init__(self, environment, agent, sessions):
         super().__init__(environment, agent, sessions)
@@ -46,6 +42,7 @@ class Trainer(Interpreter):
     # Q-learning algorithm
     def run(self):
         agent = self.agent
+        progress = 0
         for e in range(self.sessions):
             if self.canceled:
                 break
@@ -60,15 +57,11 @@ class Trainer(Interpreter):
                     print("\n########################################\n")
                 print(f"Episode {e + 1}/{self.sessions}\n")
 
-            # hold while paused
-            while self.paused and not self.singleStep and not self.canceled:
-                continue
-            self.singleStep = False
-            if self.canceled:
-                break
-
             episode = []
             while self.env.status != St.DEAD and not self.canceled:
+                while self.paused and not self.singleStep:
+                    continue
+                self.singleStep = False
                 state = self.env.get_state()
                 action = agent.choose_action(state)
                 self.env.move_snake(action)
@@ -111,11 +104,20 @@ class Trainer(Interpreter):
                 q_new = q_old + agent.alpha * td_error
                 agent.qtable.set_qvalue(s, a, q_new)
 
+            self.agent.sessions += 1
+            progress += 1
+
             if self.delay > 0 and e < self.sessions - 1:
                 time.sleep(self.delay * 2)
 
-        if not self.canceled:
-            agent.save_to_file(agent.name)
+        if self.print:
+            print("\n########################################\n")
+            print("Training finished.")
+
+        agent.save_to_file(agent.name)
+        if self.canceled:
+            self.trainingCanceled.emit(progress)
+        else:
             self.trainingFinished.emit()
 
 
@@ -143,18 +145,15 @@ class Player(Interpreter):
                     print("\n########################################\n")
                 print(f"Game {e + 1}/{self.sessions}\n")
 
-            while self.paused and not self.singleStep and not self.canceled:
-                continue
-            self.singleStep = False
-            if self.canceled:
-                break
-
-            total_reward = 0
-            time_alive = 0
             if self.delay > 0:
                 time.sleep(self.delay)
 
+            total_reward = 0
+            time_alive = 0
             while self.env.status != St.DEAD and not self.canceled:
+                while self.paused and not self.singleStep:
+                    continue
+                self.singleStep = False
                 state = self.env.get_state()
                 action = agent.choose_action(state, training=False)
                 self.env.move_snake(action)
@@ -178,5 +177,8 @@ class Player(Interpreter):
                 print(f"time alive: {time_alive}")
                 print(f"total rewards: {total_reward}")
 
-        if not self.canceled:
-            self.playSessionFinished.emit(rewards, lengths, times)
+        if self.print:
+            print("\n########################################\n")
+            print("Play session finished.")
+        self.playSessionFinished.emit(rewards, lengths, times)
+        return {"rewards": rewards, "lengths": lengths, "times": times}

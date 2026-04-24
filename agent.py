@@ -24,6 +24,8 @@ class AgentFactory:
         return agent
 
     def from_file(self, filepath):
+        if not filepath.endswith(".l2s"):
+            raise 
         with open(filepath, 'r') as f:
             data = json.load(f)
             agent = Agent()
@@ -43,6 +45,7 @@ class AgentFactory:
             agent.qtable.set_table(data['qtable']['qtable'])
             agent.set_name(data['name'])
             agent.set_color(data['color'])
+            agent.sessions = data['sessions']
             return agent
 
     def random_color(self):
@@ -85,6 +88,7 @@ class Agent:
         self.qtable = QTable()
         self.rewards = RewardStructure()
         self.name = "Noname"
+        self.sessions = 0
         self.color = [0, 0, 0]
 
     def set_learning_params(self, td_n, epsilon, alpha, gamma):

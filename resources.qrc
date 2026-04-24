@@ -5,5 +5,6 @@
     <file>assets/next_frame_icon.png</file>
     <file>assets/pause_icon.png</file>
     <file>assets/play_icon.png</file>
+    <file>assets/cancel_icon.png</file>
   </qresource>
 </RCC>

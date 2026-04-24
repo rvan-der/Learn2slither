@@ -19,6 +19,9 @@ class BoardWidget(QWidget):
         }
         self.cells = []
 
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding,
+                                 QSizePolicy.Policy.Expanding)
+        self.setSizePolicy(sizePolicy)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setStyleSheet("background-color: rgb(20, 24, 28)")
 

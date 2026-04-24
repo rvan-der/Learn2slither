@@ -13,12 +13,20 @@ class PlayerWidget(QWidget):
     def __init__(self):
         super().__init__()
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding,
-                                 QSizePolicy.Policy.Expanding)
+                                 QSizePolicy.Policy.Preferred)
         self.setSizePolicy(sizePolicy)
 
         self.playerLayout = QGridLayout(self)
         self.playerLayout.setSpacing(0)
         self.playerLayout.setContentsMargins(8, 0, 8, 6)
+
+        self.cancelButton = QPushButton()
+        self.cancelButton.setIconSize(QSize(25, 25))
+        self.cancelButton.setIcon(QIcon(":/assets/cancel_icon.png"))
+        self.cancelButton.setFlat(True)
+        self.playerLayout.addWidget(self.cancelButton, 0, 0,
+                                    alignment=Qt.AlignLeft)
+        # self.playerLayout.setColumnStretch(0, 1)
 
         self.pauseIcon = QIcon(":/assets/pause_icon.png")
         self.playIcon = QIcon(":/assets/play_icon.png")
@@ -28,18 +36,18 @@ class PlayerWidget(QWidget):
         self.playPauseButton.setIcon(self.playIcon)
         self.playPauseButton.setFlat(True)
         self.playPauseButton.clicked.connect(self.toggle_paused)
-        self.playerLayout.addWidget(self.playPauseButton, 0, 0,
+        self.playerLayout.addWidget(self.playPauseButton, 0, 1,
                                     alignment=Qt.AlignRight)
-        self.playerLayout.setColumnStretch(0, 2)
+        # self.playerLayout.setColumnStretch(1, 1)
 
         self.nextFrameButton = QPushButton()
         self.nextFrameButton.setIconSize(QSize(25, 25))
         self.nextFrameButton.setIcon(QIcon(":/assets/next_frame_icon.png"))
         self.nextFrameButton.setFlat(True)
         self.nextFrameButton.setEnabled(False)
-        self.playerLayout.addWidget(self.nextFrameButton, 0, 1,
+        self.playerLayout.addWidget(self.nextFrameButton, 0, 2,
                                     alignment=Qt.AlignLeft)
-        self.playerLayout.setColumnStretch(1, 1)
+        # self.playerLayout.setColumnStretch(2, 1)
 
         self.fpsWidget = QWidget()
         self.fpsLayout = QHBoxLayout()
@@ -55,11 +63,13 @@ class PlayerWidget(QWidget):
         self.fpsComboBox.addItem("5", userData=0.2)
         self.fpsComboBox.addItem("10", userData=0.1)
         self.fpsComboBox.addItem("20", userData=0.05)
+        self.fpsComboBox.addItem("50", userData=0.02)
+        self.fpsComboBox.addItem("max", userData=0)
         self.fpsLayout.addWidget(self.fpsComboBox)
 
-        self.playerLayout.addWidget(self.fpsWidget, 0, 2,
+        self.playerLayout.addWidget(self.fpsWidget, 0, 3,
                                     alignment=Qt.AlignRight)
-        self.playerLayout.setColumnStretch(2, 1)
+        # self.playerLayout.setColumnStretch(3, 1)
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setStyleSheet("background-color: rgb(20, 24, 28);")
