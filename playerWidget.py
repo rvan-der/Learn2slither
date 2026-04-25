@@ -21,12 +21,14 @@ class PlayerWidget(QWidget):
         self.playerLayout.setContentsMargins(8, 0, 8, 6)
 
         self.cancelButton = QPushButton()
-        self.cancelButton.setIconSize(QSize(25, 25))
+        self.cancelButton.setIconSize(QSize(22, 22))
         self.cancelButton.setIcon(QIcon(":/assets/cancel_icon.png"))
         self.cancelButton.setFlat(True)
+        self.cancelButton.setToolTip(
+            '<span style="color:white;">Cancel</span>'
+        )
         self.playerLayout.addWidget(self.cancelButton, 0, 0,
                                     alignment=Qt.AlignLeft)
-        # self.playerLayout.setColumnStretch(0, 1)
 
         self.pauseIcon = QIcon(":/assets/pause_icon.png")
         self.playIcon = QIcon(":/assets/play_icon.png")
@@ -38,16 +40,17 @@ class PlayerWidget(QWidget):
         self.playPauseButton.clicked.connect(self.toggle_paused)
         self.playerLayout.addWidget(self.playPauseButton, 0, 1,
                                     alignment=Qt.AlignRight)
-        # self.playerLayout.setColumnStretch(1, 1)
 
         self.nextFrameButton = QPushButton()
         self.nextFrameButton.setIconSize(QSize(25, 25))
         self.nextFrameButton.setIcon(QIcon(":/assets/next_frame_icon.png"))
         self.nextFrameButton.setFlat(True)
         self.nextFrameButton.setEnabled(False)
+        self.nextFrameButton.setToolTip(
+            '<span style="color:white;">Next frame</span>'
+        )
         self.playerLayout.addWidget(self.nextFrameButton, 0, 2,
                                     alignment=Qt.AlignLeft)
-        # self.playerLayout.setColumnStretch(2, 1)
 
         self.fpsWidget = QWidget()
         self.fpsLayout = QHBoxLayout()

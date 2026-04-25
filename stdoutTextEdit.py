@@ -1,7 +1,7 @@
 import sys
 from PySide6.QtWidgets import (QPlainTextEdit, QFrame, QSizePolicy)
 from PySide6.QtCore import (QObject, Signal)
-from PySide6.QtGui import QFont
+from PySide6.QtGui import (QFont, QTextCursor)
 
 
 class StdoutRedirect(QObject):
@@ -44,5 +44,16 @@ class StdoutTextEdit(QPlainTextEdit):
         self.setSizePolicy(sizePolicy)
 
         self.stdoutRedirect = StdoutRedirect()
-        self.stdoutRedirect.stdoutWritten.connect(self.appendPlainText)
+        self.stdoutRedirect.stdoutWritten.connect(self.append_text)
         sys.stdout = self.stdoutRedirect
+
+    def append_text(self, text):
+        scrollBar = self.verticalScrollBar()
+        atEnd = False
+        if scrollBar.value() == scrollBar.maximum():
+            atEnd = True
+        cursor = self.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        cursor.insertText(text)
+        if atEnd:
+            scrollBar.setValue(scrollBar.maximum())

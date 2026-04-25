@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'l2sMainWindow.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.10.1
+## Created by: Qt User Interface Compiler version 6.11.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -27,7 +27,8 @@ class Ui_l2sMainWindow(object):
         l2sMainWindow.resize(900, 700)
         l2sMainWindow.setMinimumSize(QSize(800, 600))
         l2sMainWindow.setWindowTitle(u"Learn 2 slither")
-        l2sMainWindow.setStyleSheet(u"")
+        l2sMainWindow.setStyleSheet(u"QWidget {background-color: rgb(42, 51, 59);\n"
+"color: rgb(230, 230, 230)}")
         self.centralwidget = QWidget(l2sMainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -128,13 +129,29 @@ class Ui_l2sMainWindow(object):
         self.agentsScrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 284, 451))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 284, 450))
         self.agentsScrollArea.setWidget(self.scrollAreaWidgetContents)
 
         self.agentsFrameLayout.addWidget(self.agentsScrollArea)
 
-        self.createAgentButton = QPushButton(self.agentsFrame)
+        self.agentButtonsWidget = QWidget(self.agentsFrame)
+        self.agentButtonsWidget.setObjectName(u"agentButtonsWidget")
+        sizePolicy7 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        sizePolicy7.setHorizontalStretch(0)
+        sizePolicy7.setVerticalStretch(0)
+        sizePolicy7.setHeightForWidth(self.agentButtonsWidget.sizePolicy().hasHeightForWidth())
+        self.agentButtonsWidget.setSizePolicy(sizePolicy7)
+        self.horizontalLayout_2 = QHBoxLayout(self.agentButtonsWidget)
+        self.horizontalLayout_2.setSpacing(0)
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.createAgentButton = QPushButton(self.agentButtonsWidget)
         self.createAgentButton.setObjectName(u"createAgentButton")
+        sizePolicy8 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        sizePolicy8.setHorizontalStretch(0)
+        sizePolicy8.setVerticalStretch(0)
+        sizePolicy8.setHeightForWidth(self.createAgentButton.sizePolicy().hasHeightForWidth())
+        self.createAgentButton.setSizePolicy(sizePolicy8)
         icon = QIcon()
         icon.addFile(u":/assets/create_snake_icon.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.createAgentButton.setIcon(icon)
@@ -142,7 +159,24 @@ class Ui_l2sMainWindow(object):
         self.createAgentButton.setAutoDefault(True)
         self.createAgentButton.setFlat(False)
 
-        self.agentsFrameLayout.addWidget(self.createAgentButton)
+        self.horizontalLayout_2.addWidget(self.createAgentButton)
+
+        self.importButton = QPushButton(self.agentButtonsWidget)
+        self.importButton.setObjectName(u"importButton")
+        sizePolicy9 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        sizePolicy9.setHorizontalStretch(0)
+        sizePolicy9.setVerticalStretch(0)
+        sizePolicy9.setHeightForWidth(self.importButton.sizePolicy().hasHeightForWidth())
+        self.importButton.setSizePolicy(sizePolicy9)
+        icon1 = QIcon()
+        icon1.addFile(u":/assets/import_icon.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.importButton.setIcon(icon1)
+        self.importButton.setIconSize(QSize(25, 25))
+
+        self.horizontalLayout_2.addWidget(self.importButton)
+
+
+        self.agentsFrameLayout.addWidget(self.agentButtonsWidget)
 
 
         self.mainHLayout.addWidget(self.agentsFrame)
@@ -150,7 +184,7 @@ class Ui_l2sMainWindow(object):
         l2sMainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(l2sMainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 900, 23))
+        self.menubar.setGeometry(QRect(0, 0, 900, 24))
         l2sMainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(l2sMainWindow)
         self.statusbar.setObjectName(u"statusbar")
@@ -167,9 +201,13 @@ class Ui_l2sMainWindow(object):
     def retranslateUi(self, l2sMainWindow):
         self.agentsLabel.setText("")
 #if QT_CONFIG(tooltip)
-        self.createAgentButton.setToolTip(QCoreApplication.translate("l2sMainWindow", u"Create a new agent", None))
+        self.createAgentButton.setToolTip(QCoreApplication.translate("l2sMainWindow", u"Create a new snake", None))
 #endif // QT_CONFIG(tooltip)
         self.createAgentButton.setText("")
+#if QT_CONFIG(tooltip)
+        self.importButton.setToolTip(QCoreApplication.translate("l2sMainWindow", u"Import a model file", None))
+#endif // QT_CONFIG(tooltip)
+        self.importButton.setText("")
         pass
     # retranslateUi
 

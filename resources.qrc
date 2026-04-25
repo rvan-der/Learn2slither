@@ -1,5 +1,6 @@
 <RCC>
   <qresource>
+    <file>assets/import_icon.png</file>
     <file>assets/snake_team_ai.jpeg</file>
     <file>assets/create_snake_icon.png</file>
     <file>assets/next_frame_icon.png</file>

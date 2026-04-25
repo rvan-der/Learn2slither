@@ -19,7 +19,7 @@ class AgentsToolBox(QToolBox):
         self.setSizePolicy(sizePolicy)
 
     def addAgent(self, agent):
-        pixmap = QPixmap(20, 20)
+        pixmap = QPixmap(100, 100)
         pixmap.fill(QColor(*agent.color))
         widget = AgentsToolBoxWidget(agent, toolBox=self)
         self.addItem(widget, QIcon(pixmap), agent.name)

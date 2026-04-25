@@ -13,17 +13,24 @@ from interpreter import (Trainer, Player)
 from PySide6.QtWidgets import (QApplication, QMainWindow, QDialog,
                                QGridLayout, QLabel, QDialogButtonBox)
 from PySide6.QtCore import (Qt, Signal, Slot)
+from PySide6.QtGui import QFont
 
 
 class MessagePopup(QDialog):
     def __init__(self, text, parent=None):
         super().__init__(parent=parent, f=Qt.Popup)
         self.setAttribute(Qt.WA_StyledBackground, True)
-        self.setStyleSheet("QDialog{background-color: rgb(40, 48, 56)}")
+        self.setStyleSheet("""
+QDialog{background-color: rgb(40, 48, 56);
+border: 2px ridge grey}""")
 
         layout = QGridLayout()
 
         label = QLabel(text)
+        font = QFont("Courier New")
+        font.setStyleHint(QFont.TypeWriter)
+        font.setFixedPitch(True)
+        label.setFont(font)
         layout.addWidget(label, 0, 0, alignment=Qt.AlignCenter)
 
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok)
@@ -105,24 +112,26 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
         self.agentsToolBox.setEnabled(True)
         self.playerWidget.set_paused(True)
         self.playerWidget.setEnabled(False)
-        message = "0 play sessions finished. No results to show."
+        msg = "0 play sessions finished. No results to show."
         if (len(rewards) > 0):
-            message = f"""
-Play sessions finished !\n
-rewards:\n
-   - total: {sum(rewards)}\n
-   - mean:{sum(rewards) / len(rewards)}\n
-   - median: {statistics.median(rewards)}\n
-lengths:\n
-   - total: {sum(lengths)}\n
-   - mean:{sum(lengths) / len(lengths)}\n
-   - median: {statistics.median(lengths)}\n
-times alive:\n
-   - total: {sum(times)}\n
-   - mean:{sum(times) / len(times)}\n
-   - median: {statistics.median(times)}
-"""
-        dialog = MessagePopup(message, parent=self)
+            tot_rwd = sum(rewards)
+            mean_rwd = round(sum(rewards) / len(rewards))
+            med_rwd = statistics.median(rewards)
+            tot_len = sum(lengths)
+            mean_len = round(sum(lengths) / len(lengths))
+            med_len = statistics.median(lengths)
+            tot_tim = sum(times)
+            mean_tim = round(sum(times) / len(times))
+            med_tim = statistics.median(times)
+            msg = "Play session finished !\n\n" + \
+                  "        |  total   |   mean   |  median  |\n" +\
+                  "--------|----------|----------|----------|\n" +\
+                  f"rewards |{tot_rwd:>9} |{mean_rwd:>9} |{med_rwd:>9} |\n" +\
+                  "--------|----------|----------|----------|\n" +\
+                  f"lengths |{tot_len:>9} |{mean_len:>9} |{med_len:>9} |\n" +\
+                  "--------|----------|----------|----------|\n" +\
+                  f"times   |{tot_tim:>9} |{mean_tim:>9} |{med_tim:>9} |"
+        dialog = MessagePopup(msg, parent=self)
         dialog.finished.connect(self.environment.init_empty_board)
         dialog.open()
         self.quit_interpreter_thread()
@@ -174,7 +183,6 @@ taken into account. The progress of {progress} completed episodes was saved.
         self.quit_interpreter_thread()
 
     def abort(self):
-        print("ABORT!!")
         if self.interpreter is None:
             return
         if isinstance(self.interpreter, Trainer):
