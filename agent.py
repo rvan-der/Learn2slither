@@ -15,17 +15,20 @@ class AgentFactory:
 
     instance = None
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls):
         if cls.instance is None:
             cls.instance = super(AgentFactory, cls).__new__(cls)
         return cls.instance
 
-    def new(self, td_n, rewards, epsilon=0.1, alpha=0.1, gamma=0.9):
+    def new(self, td_n=1, epsilon=0.5, alpha=0.1, gamma=0.9, rewards=None,
+            name=None, color=None, filepath=None):
         agent = Agent()
-        agent.set_rewards(rewards)
+        agent.set_file_path(filepath)
         agent.set_learning_params(td_n, epsilon, alpha, gamma)
-        agent.set_name(self.random_name())
-        agent.set_color(self.random_color())
+        if rewards is not None:
+            agent.set_rewards(rewards)
+        agent.set_name(self.random_name() if name is None else name)
+        agent.set_color(self.random_color() if color is None else color)
         return agent
 
     def validate_file(self, data):
@@ -58,6 +61,8 @@ class AgentFactory:
 
         if not isinstance(data['name'], str):
             raise ValueError("Wrong data type for name.")
+        if len(data['name'] > 15):
+            raise ValueError("Name too long.")
 
         if not isinstance(data['sessions'], int) \
                 or data['sessions'] < 0:
@@ -70,19 +75,20 @@ class AgentFactory:
             if not isinstance(c, int) or c < 0 or c > 255:
                 raise ValueError("Wrong value in color.")
 
-        keys = {'rewards', 'target_len'}
+        keys = {'rewards', 'target_len', 'penalty'}
         if not isinstance(data['rewards'], dict) \
                 or set(data['rewards'].keys()) != keys:
             raise ValueError("Wrong data type for reward structure.")
 
-        if isinstance(data['rewards']['target_len'], float):
-            if data['rewards']['target_len'] != float('inf'):
-                raise ValueError("Wrong value for target length.")
-        elif isinstance(data['rewards']['target_len'], int):
-            if data['rewards']['target_len'] < 0:
-                raise ValueError("Wrong value for target length.")
-        else:
-            raise ValueError("Wrong data type for target length.")
+        if not isinstance(data['rewards']['target_len'], int) \
+                or data['rewards']['target_len'] < 0 \
+                or data['rewards']['target_len'] > 100:
+            raise ValueError("Wrong value for target length.")
+
+        if not isinstance(data['rewards']['penalty'], int) \
+                or data['rewards']['penalty'] < -100 \
+                or data['rewards']['penalty'] > 0:
+            raise ValueError("Wrong value for penalty.")
 
         keys = {'alive', 'dead', 'green', 'red'}
         if not isinstance(data['rewards']['rewards'], dict) \
@@ -91,6 +97,18 @@ class AgentFactory:
         for v in data['rewards']['rewards'].values():
             if not isinstance(v, int) and not isinstance(v, float):
                 raise ValueError("Wrong data type for reward values.")
+        if data['rewards']['rewards']['alive'] <= 0 \
+                or data['rewards']['rewards']['alive'] > 100:
+            raise ValueError("Wrong value for alive reward.")
+        if data['rewards']['rewards']['dead'] < -100 \
+                or data['rewards']['rewards']['dead'] >= 0:
+            raise ValueError("Wrong value for dead reward.")
+        if data['rewards']['rewards']['green'] <= 0 \
+                or data['rewards']['rewards']['green'] > 100:
+            raise ValueError("Wrong value for green reward.")
+        if data['rewards']['rewards']['red'] < -100 \
+                or data['rewards']['rewards']['red'] >= 0:
+            raise ValueError("Wrong value for red reward.")
 
         if not isinstance(data['qtable'], dict):
             raise ValueError("Wrong data type for qtable.")
@@ -117,7 +135,9 @@ class AgentFactory:
             data = json.load(f)
             self.validate_file(data)
             agent = Agent()
+            agent.set_file_path(filepath)
             agent.rewards.set_target_len(data['rewards']['target_len'])
+            agent.rewards.set_penalty(data['rewards']['penalty'])
             agent.rewards.set_rewards(
                 data['rewards']['rewards']['alive'],
                 data['rewards']['rewards']['dead'],
@@ -169,6 +189,7 @@ class Agent:
         # epsilon: exploration rate
         # alpha: learning rate
         # gamma: discount factor
+        self.filepath = None
         self.td_n = 0
         self.epsilon = 0
         self.alpha = 0
@@ -178,6 +199,9 @@ class Agent:
         self.name = "Noname"
         self.sessions = 0
         self.color = [0, 0, 0]
+
+    def set_file_path(self, filepath):
+        self.filepath = filepath
 
     def set_learning_params(self, td_n, epsilon, alpha, gamma):
         self.td_n = td_n
@@ -216,12 +240,13 @@ class Agent:
                 return action
         return random.choice(list(Dr))
 
-    def save_to_file(self, filename):
-        filepath = '~/.l2s_agents/' + filename + '.l2s'
-        filepath = os.path.expanduser(filepath)
-        if not os.path.exists(os.path.dirname(filepath)):
-            os.makedirs(os.path.dirname(filepath))
-        with open(filepath, 'w') as f:
+    def save_to_file(self):
+        path = os.path.expanduser(self.filepath)
+        if path is None:
+            path = os.path.expanduser(f"~/.l2s_agents/{self.name}.l2s")
+        if not os.path.exists(os.path.dirname(path)):
+            os.makedirs(os.path.dirname(path))
+        with open(path, 'w') as f:
             json.dump(
                 self,
                 f,

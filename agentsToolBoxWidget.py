@@ -29,6 +29,7 @@ class AgentsToolBoxWidget(QWidget):
         self.episodesSpinBox = QSpinBox()
         self.episodesSpinBox.setRange(1, 100000)
         self.episodesSpinBox.setValue(1)
+        self.episodesSpinBox.setAccelerated(True)
         self.episodesSpinBox.returnPressed.connect(
             self.trainAgent
         )
@@ -56,6 +57,7 @@ class AgentsToolBoxWidget(QWidget):
         self.gamesSpinBox = QSpinBox()
         self.gamesSpinBox.setRange(1, 100000)
         self.gamesSpinBox.setValue(1)
+        self.gamesSpinBox.setAccelerated(True)
         self.gamesSpinBox.returnPressed.connect(
             self.playAgent
         )

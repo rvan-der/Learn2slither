@@ -73,7 +73,7 @@ class Ui_l2sMainWindow(object):
         self.stdOutFrame.setObjectName(u"stdOutFrame")
         sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(2)
+        sizePolicy3.setVerticalStretch(3)
         sizePolicy3.setHeightForWidth(self.stdOutFrame.sizePolicy().hasHeightForWidth())
         self.stdOutFrame.setSizePolicy(sizePolicy3)
         self.stdOutFrame.setFrameShape(QFrame.Shape.Box)

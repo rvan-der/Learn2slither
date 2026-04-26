@@ -1,15 +1,16 @@
 import sys
 import statistics
 
+from agent import AgentFactory
+from rewards import RewardStructure
 from l2sMainWindow import Ui_l2sMainWindow
 from boardWidget import BoardWidget
 from stdoutTextEdit import StdoutTextEdit
 from agentsToolBox import AgentsToolBox
 from playerWidget import PlayerWidget
 from environment import Environment
-from agent import AgentFactory
-from rewards import RewardStructure
 from interpreter import (Trainer, Player)
+from agentCreationDialog import AgentCreationDialog
 from PySide6.QtWidgets import (QApplication, QMainWindow, QDialog,
                                QGridLayout, QLabel, QDialogButtonBox)
 from PySide6.QtCore import (Qt, Signal, Slot)
@@ -71,6 +72,7 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
         self.agentsToolBox.trainAgentSignal.connect(self.train_agent)
         self.agentsToolBox.playAgentSignal.connect(self.play_agent)
         self.agentsToolBox.currentChanged.connect(self.set_agent_colors)
+        self.createAgentButton.clicked.connect(self.create_agent)
 
         self.factory = AgentFactory()
         for _ in range(20):
@@ -181,6 +183,10 @@ taken into account. The progress of {progress} completed episodes was saved.
         dialog.finished.connect(self.environment.init_empty_board)
         dialog.open()
         self.quit_interpreter_thread()
+
+    def create_agent(self):
+        dialog = AgentCreationDialog(self)
+        dialog.open()
 
     def abort(self):
         if self.interpreter is None:
