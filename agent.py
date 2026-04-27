@@ -97,7 +97,7 @@ class AgentFactory:
         for v in data['rewards']['rewards'].values():
             if not isinstance(v, int) and not isinstance(v, float):
                 raise ValueError("Wrong data type for reward values.")
-        if data['rewards']['rewards']['alive'] <= 0 \
+        if data['rewards']['rewards']['alive'] < 0 \
                 or data['rewards']['rewards']['alive'] > 100:
             raise ValueError("Wrong value for alive reward.")
         if data['rewards']['rewards']['dead'] < -100 \
@@ -156,13 +156,27 @@ class AgentFactory:
             agent.sessions = data['sessions']
             return agent
 
-    def random_color(self):
+    @staticmethod
+    def default_filepath(name):
+        dir = "/sgoinfre/goinfre/Perso/rvan-der"
+        if not os.path.exists(dir):
+            dir = os.path.expanduser("~/.local")
+        path = f"{dir}/Learn2Slither/agents/{name}.l2s"
+        i = 1
+        while os.path.exists(path):
+            path = f"{dir}/Learn2Slither/agents/{name}({i}).l2s"
+            i += 1
+        return path
+
+    @staticmethod
+    def random_color():
         color = [random.randint(0, 255) for _ in range(3)]
         if sum(color) < 100:
             color = [c * 1.2 for c in color]
         return color
 
-    def random_name(self):
+    @staticmethod
+    def random_name():
         vowels = 'aaaaeeeeiiiioooouuy'
         consonants = 'bbccddfffgghhhjkllmmnnppqrrsssssstvwxzzzz'
         parity = random.randint(0, 1)
@@ -201,6 +215,18 @@ class Agent:
         self.color = [0, 0, 0]
 
     def set_file_path(self, filepath):
+        if filepath is None or filepath == "":
+            self.filepath = None
+            return
+        basename = os.path.basename(filepath)
+        if basename is None or basename == "":
+            raise ValueError("No filename provided.")
+        if basename[0] == '.':
+            raise ValueError("The file's name can't start with '.'")
+        if not basename.endswith(".l2s"):
+            raise ValueError("The file must have the .l2s extension.")
+        if '/' not in filepath:
+            filepath = f"./{filepath}"
         self.filepath = filepath
 
     def set_learning_params(self, td_n, epsilon, alpha, gamma):
@@ -241,9 +267,11 @@ class Agent:
         return random.choice(list(Dr))
 
     def save_to_file(self):
-        path = os.path.expanduser(self.filepath)
-        if path is None:
-            path = os.path.expanduser(f"~/.l2s_agents/{self.name}.l2s")
+        path = ""
+        if self.filepath is None:
+            path = AgentFactory.default_filepath(self.name)
+        else:
+            path = os.path.expanduser(self.filepath)
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
         with open(path, 'w') as f:
@@ -261,4 +289,4 @@ if __name__ == "__main__":
     # agent.qtable.init_state("state1")
     # agent.qtable.init_state("state2")
     # agent.qtable.init_state("state3")
-    agent.save_to_file("testagent.json")
+    agent.save_to_file()

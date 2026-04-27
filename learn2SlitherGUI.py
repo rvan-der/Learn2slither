@@ -1,45 +1,17 @@
 import sys
 import statistics
 
-from agent import AgentFactory
-from rewards import RewardStructure
+from environment import Environment
+from interpreter import (Trainer, Player)
 from l2sMainWindow import Ui_l2sMainWindow
 from boardWidget import BoardWidget
 from stdoutTextEdit import StdoutTextEdit
 from agentsToolBox import AgentsToolBox
 from playerWidget import PlayerWidget
-from environment import Environment
-from interpreter import (Trainer, Player)
+from uiElements import MessagePopup
 from agentCreationDialog import AgentCreationDialog
-from PySide6.QtWidgets import (QApplication, QMainWindow, QDialog,
-                               QGridLayout, QLabel, QDialogButtonBox)
-from PySide6.QtCore import (Qt, Signal, Slot)
-from PySide6.QtGui import QFont
-
-
-class MessagePopup(QDialog):
-    def __init__(self, text, parent=None):
-        super().__init__(parent=parent, f=Qt.Popup)
-        self.setAttribute(Qt.WA_StyledBackground, True)
-        self.setStyleSheet("""
-QDialog{background-color: rgb(40, 48, 56);
-border: 2px ridge grey}""")
-
-        layout = QGridLayout()
-
-        label = QLabel(text)
-        font = QFont("Courier New")
-        font.setStyleHint(QFont.TypeWriter)
-        font.setFixedPitch(True)
-        label.setFont(font)
-        layout.addWidget(label, 0, 0, alignment=Qt.AlignCenter)
-
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok)
-        buttonBox.accepted.connect(self.accept)
-        buttonBox.rejected.connect(self.reject)
-        self.finished.connect(self.deleteLater)
-        layout.addWidget(buttonBox, 1, 0, alignment=Qt.AlignCenter)
-        self.setLayout(layout)
+from PySide6.QtWidgets import (QApplication, QMainWindow)
+from PySide6.QtCore import (Signal, Slot)
 
 
 class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
@@ -74,9 +46,6 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
         self.agentsToolBox.currentChanged.connect(self.set_agent_colors)
         self.createAgentButton.clicked.connect(self.create_agent)
 
-        self.factory = AgentFactory()
-        for _ in range(20):
-            self.agentsToolBox.addAgent(self.factory.new(2, RewardStructure()))
         self.agentsScrollArea.setWidget(self.agentsToolBox)
 
         self.environment.cellUpdate.connect(self.boardWidget.update_cell)
@@ -186,6 +155,7 @@ taken into account. The progress of {progress} completed episodes was saved.
 
     def create_agent(self):
         dialog = AgentCreationDialog(self)
+        dialog.agentCreated.connect(self.agentsToolBox.addAgent)
         dialog.open()
 
     def abort(self):

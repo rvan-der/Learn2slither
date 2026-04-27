@@ -1,7 +1,6 @@
-from PySide6.QtWidgets import (QToolBox, QSizePolicy, QDialog,
-                               QGridLayout, QDialogButtonBox)
+from PySide6.QtWidgets import (QToolBox, QSizePolicy)
 from PySide6.QtGui import (QIcon, QPixmap, QColor)
-from PySide6.QtCore import (Signal, Qt)
+from PySide6.QtCore import (Signal)
 from agent import Agent
 from agentsToolBoxWidget import AgentsToolBoxWidget
 

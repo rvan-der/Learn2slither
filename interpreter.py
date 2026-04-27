@@ -118,7 +118,7 @@ class Trainer(Interpreter):
             print("\n########################################\n")
             print("Training finished.")
 
-        agent.save_to_file(agent.name)
+        agent.save_to_file()
         if self.canceled:
             self.trainingCanceled.emit(progress)
         else:

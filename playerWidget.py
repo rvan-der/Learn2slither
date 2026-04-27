@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (QWidget, QSizePolicy, QGridLayout,
                                QLabel)
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import (QSize, Qt, Signal)
-import resources_rc
+import resources_rc  # noqa
 
 
 class PlayerWidget(QWidget):
@@ -72,7 +72,6 @@ class PlayerWidget(QWidget):
 
         self.playerLayout.addWidget(self.fpsWidget, 0, 3,
                                     alignment=Qt.AlignRight)
-        # self.playerLayout.setColumnStretch(3, 1)
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setStyleSheet("background-color: rgb(20, 24, 28);")
