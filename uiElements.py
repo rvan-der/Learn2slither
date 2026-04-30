@@ -1,38 +1,31 @@
 from PySide6.QtWidgets import (QLabel, QWidget, QHBoxLayout,
                                QSizePolicy, QFrame, QDialogButtonBox,
                                QDialog, QGridLayout)
-from PySide6.QtGui import (QPixmap, QColor, QFont)
+from PySide6.QtGui import (QPainter, QBrush, QFont)
 from PySide6.QtCore import Qt
 
 
-class ColorDisplay(QLabel):
-    def __init__(self, width, height, color=(0, 0, 0), parent=None):
-        super().__init__(parent=parent)
-        self.color = color
-        self.w = width
-        self.h = height
+class ColorDisplay(QWidget):
+    def __init__(self, width, height, color, parent=None):
+        super().__init__(parent)
         self.setFixedWidth(width)
         self.setFixedHeight(height)
-        pixmap = QPixmap(width, height)
-        pixmap.fill(QColor(*self.color))
-        self.setPixmap(pixmap)
-
-    def set_size(self, width, height):
-        self.w = width
-        self.h = height
-        self.setFixedWidth(width)
-        self.setFixedHeight(height)
-        self.set_color(self.color)
+        self.br = QBrush(Qt.SolidPattern)
+        self.br.setColor(color)
+        self.painter = QPainter()
 
     def set_color(self, color):
-        self.color = color
-        pixmap = QPixmap(self.w, self.h)
-        pixmap.fill(QColor(*color))
-        self.setPixmap(pixmap)
+        self.br.setColor(color)
+        self.update()
+
+    def paintEvent(self, event):
+        self.painter.begin(self)
+        self.painter.fillRect(event.rect(), self.br)
+        self.painter.end()
 
 
 class SubtitleLine(QWidget):
-    def __init__(self, text, parent=None):
+    def __init__(self, text, pointSize=9, parent=None):
         super().__init__(parent=parent)
         mainLayout = QHBoxLayout()
         mainLayout.setSpacing(4)
@@ -47,7 +40,7 @@ class SubtitleLine(QWidget):
         label = QLabel(text)
         label.setStyleSheet("color: rgb(125, 125, 125)")
         font = QFont()
-        font.setPointSize(9)
+        font.setPointSize(pointSize)
         label.setFont(font)
 
         rightLine = QFrame(frameShape=QFrame.HLine, lineWidth=1)
@@ -64,6 +57,7 @@ class SubtitleLine(QWidget):
 class MessagePopup(QDialog):
     def __init__(self, text, color=None, parent=None):
         super().__init__(parent=parent, f=Qt.Popup)
+        print("hello popup")
         self.setAttribute(Qt.WA_StyledBackground, True)
         style = """QDialog{background-color: rgb(40, 48, 56);
 border: 2px ridge grey}"""

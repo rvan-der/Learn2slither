@@ -2,13 +2,14 @@ from PySide6.QtWidgets import (QWidget, QSizePolicy, QGridLayout,
                                QHBoxLayout, QPushButton, QComboBox,
                                QLabel)
 from PySide6.QtGui import QIcon
-from PySide6.QtCore import (QSize, Qt, Signal)
+from PySide6.QtCore import (QSize, Qt, Signal, Slot)
 import resources_rc  # noqa
 
 
 class PlayerWidget(QWidget):
 
     pausedChanged = Signal(bool)
+    delayChanged = Signal(float)
 
     def __init__(self):
         super().__init__()
@@ -61,13 +62,12 @@ class PlayerWidget(QWidget):
         self.fpsLayout.addWidget(self.fpsLAbel)
 
         self.fpsComboBox = QComboBox()
-        self.fpsComboBox.addItem("1", userData=1)
+        self.fpsComboBox.addItem("1", userData=1.0)
         self.fpsComboBox.addItem("2", userData=0.5)
         self.fpsComboBox.addItem("5", userData=0.2)
         self.fpsComboBox.addItem("10", userData=0.1)
         self.fpsComboBox.addItem("20", userData=0.05)
-        self.fpsComboBox.addItem("50", userData=0.02)
-        self.fpsComboBox.addItem("max", userData=0)
+        self.fpsComboBox.currentIndexChanged.connect(self.fps_changed)
         self.fpsLayout.addWidget(self.fpsComboBox)
 
         self.playerLayout.addWidget(self.fpsWidget, 0, 3,
@@ -75,6 +75,10 @@ class PlayerWidget(QWidget):
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setStyleSheet("background-color: rgb(20, 24, 28);")
+
+    @Slot(int)
+    def fps_changed(self, index):
+        self.delayChanged.emit(self.fpsComboBox.itemData(index))
 
     def toggle_paused(self):
         self.set_paused(not self.paused)

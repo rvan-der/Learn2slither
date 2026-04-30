@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QDialogButtonBox,
                                QHBoxLayout, QDoubleSpinBox, QSizePolicy,
                                QGridLayout, QPushButton, QCheckBox,
                                QSpacerItem, QFileDialog)
-from PySide6.QtGui import (QIcon, QValidator)
+from PySide6.QtGui import (QIcon, QValidator, QColor)
 from PySide6.QtCore import (Signal, Qt, QSize)
 from uiElements import (MessagePopup, ColorDisplay, SubtitleLine)
 from agent import (Agent, AgentFactory)
@@ -25,7 +25,7 @@ class NameValidator(QValidator):
 
 class AgentCreationDialog(QDialog):
 
-    agentCreated = Signal(Agent)
+    agentCreated = Signal(str)
     factory = AgentFactory()
 
     def __init__(self, parent=None):
@@ -57,7 +57,7 @@ QDialog {border: 2px ridge grey}""")
         self.BSpinbox = QSpinBox()
         self.BSpinbox.setRange(0, 255)
         self.BSpinbox.setValue(color[2])
-        self.colorDisplay = ColorDisplay(20, 20, color)
+        self.colorDisplay = ColorDisplay(20, 20, QColor(*color))
 
         personalityLayout = QHBoxLayout()
         personalityLayout.setSpacing(5)
@@ -171,7 +171,7 @@ QDialog {border: 2px ridge grey}""")
         self.greenSpinBox.setRange(0, 100)
         self.greenSpinBox.setSingleStep(0.1)
         self.greenSpinBox.setAccelerated(True)
-        self.greenSpinBox.setValue(1)
+        self.greenSpinBox.setValue(2)
         greenLayout = QHBoxLayout()
         greenLayout.setSpacing(5)
         greenLayout.addWidget(QLabel("green:"))
@@ -183,7 +183,7 @@ QDialog {border: 2px ridge grey}""")
         self.redSpinBox.setRange(-100, 0)
         self.redSpinBox.setSingleStep(0.1)
         self.redSpinBox.setAccelerated(True)
-        self.redSpinBox.setValue(-1)
+        self.redSpinBox.setValue(-2)
         redLayout = QHBoxLayout()
         redLayout.setSpacing(5)
         redLayout.addWidget(QLabel("red:"))
@@ -193,7 +193,7 @@ QDialog {border: 2px ridge grey}""")
 
         targetLenLabel = QLabel("target length:")
         targetLenLabel.setToolTip(
-            """Sets the snake's length after which the
+            """The snake's length after which the
 penalty isn't applied anymore.""")
         self.targetLenSpinBox = QSpinBox()
         self.targetLenSpinBox.setRange(1, 100)
@@ -306,7 +306,7 @@ while the snake is under the target length.""")
             )
 
     def change_color(self):
-        self.colorDisplay.set_color((
+        self.colorDisplay.set_color(QColor(
             self.RSpinbox.value(),
             self.GSpinbox.value(),
             self.BSpinbox.value()
@@ -379,6 +379,5 @@ non alphanumeric characters.",
             ).open()
 
         if agent is not None:
-            agent.save_to_file()
-            self.agentCreated.emit(agent)
+            self.agentCreated.emit(filepath)
             super().accept()

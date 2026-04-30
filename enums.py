@@ -10,11 +10,11 @@ class Direction(IntEnum):
     @staticmethod
     def from_str(label):
         lower = label.lower()
-        if lower in ['z', 'up']:
+        if lower in ['w', 'up']:
             return Direction.UP
         if lower in ['s', 'down']:
             return Direction.DOWN
-        if lower in ['q', 'left']:
+        if lower in ['a', 'left']:
             return Direction.LEFT
         if lower in ['d', 'right']:
             return Direction.RIGHT

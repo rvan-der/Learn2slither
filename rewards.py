@@ -54,10 +54,7 @@ class RewardStructure:
         self.validate()
 
     def get(self, status, length):
-        base_rwd = self.rewards[status]
-        if length >= self.target_len:
-            if status == St.ALIVE:
-                return base_rwd * (1.5 if base_rwd > 0 else 0.5)
-            if status == St.RED:
-                return base_rwd * 0.5
-        return base_rwd
+        reward = self.rewards[status]
+        if length < self.target_len and status != St.GREEN:
+            reward += self.penalty
+        return reward

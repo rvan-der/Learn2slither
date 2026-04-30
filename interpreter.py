@@ -1,48 +1,84 @@
 import time
 from enums import Status as St
-from PySide6.QtCore import (QThread, Signal)
+from agent import AgentFactory
+from environment import Environment
+from PySide6.QtCore import (QObject, QRunnable, Signal, Slot)
 
 
-class Interpreter(QThread):
-    def __init__(self, environment, agent, sessions, parent=None):
-        super().__init__(parent)
-        self.env = environment
-        self.agent = agent
-        self.sessions = sessions
+class InterpreterSignals(QObject):
+    progressMade = Signal()
+    trainingFinished = Signal(int, float, int, int)
+    playSessionFinished = Signal(int, list, list, list)
+
+
+class Interpreter(QRunnable):
+
+    sigs = InterpreterSignals()
+
+    def __init__(self, filepath, sessions, train):
+        super().__init__()
+        self.env = Environment(displayOn=False)
+        self.factory = AgentFactory()
+        self.displayOn = False
         self.paused = False
-        self.print = True
+        self.printOn = False
         self.singleStep = False
         self.canceled = False
         self.delay = 0
+        self.train = train
+        self.sessions = sessions
+        self.filepath = filepath
+        self.aborted = False
 
+    def set_filepath(self, filepath):
+        self.filepath = filepath
+
+    def set_sessions(self, sessions):
+        self.sessions = sessions
+
+    @Slot(float)
     def set_delay(self, delay):
         self.delay = delay
 
+    @Slot(bool)
     def set_paused(self, paused):
         self.paused = paused
 
-    def set_print(self, _print):
-        self.print = _print
+    @Slot(bool)
+    def set_print_on(self, printOn):
+        self.printOn = printOn
 
+    @Slot(bool)
+    def set_display_on(self, displayOn):
+        self.env.displayOn = displayOn
+
+    @Slot()
     def single_step(self):
         self.singleStep = True
 
+    @Slot()
     def cancel(self):
         self.canceled = True
 
+    @Slot()
+    def abort(self):
+        self.aborted = True
+        self.canceled = True
 
-class Trainer(Interpreter):
-
-    trainingFinished = Signal()
-    trainingCanceled = Signal(int)
-
-    def __init__(self, environment, agent, sessions):
-        super().__init__(environment, agent, sessions)
-
-    # Q-learning algorithm
+    @Slot()
     def run(self):
-        agent = self.agent
+        if self.train:
+            self.q_learning()
+        else:
+            self.play()
+
+    def q_learning(self):
+        agent = self.factory.agent_from_file(self.filepath)
+        maxLength = 0
+        maxTime = 0
+        maxRewards = float('-inf')
         progress = 0
+
         for e in range(self.sessions):
             if self.canceled:
                 break
@@ -52,7 +88,7 @@ class Trainer(Interpreter):
             if self.delay > 0:
                 time.sleep(self.delay)
 
-            if self.print:
+            if self.printOn:
                 print("\n########################################\n")
                 if e == 0:
                     print("Starting training sessions.\n")
@@ -73,7 +109,7 @@ class Trainer(Interpreter):
                 episode.append({'state': state,
                                 'action': action,
                                 'reward': reward})
-                if self.print:
+                if self.printOn:
                     print(f"\n{state}")
                     print(f"{str(action)}")
                 if self.delay > 0:
@@ -82,11 +118,21 @@ class Trainer(Interpreter):
             if self.canceled:
                 break
 
-            if self.print:
+            totalRewards = sum(step['reward'] for step in episode)
+            length = len(self.env.snake)
+            timeAlive = len(episode)
+            if totalRewards > maxRewards:
+                maxRewards = totalRewards
+            if length > maxLength:
+                maxLength = length
+            if timeAlive > maxTime:
+                maxTime = timeAlive
+
+            if self.printOn:
                 print("\nEpisode finished")
-                print(f"final length: {len(self.env.snake)}")
-                print(f"time alive: {len(episode)}")
-                print(f"total rewards: {sum(s['reward'] for s in episode)}")
+                print(f"final length: {length}")
+                print(f"time alive: {timeAlive}")
+                print(f"total rewards: {totalRewards}")
                 print("\nUpdating Q-values...")
 
             # update Q-values
@@ -108,35 +154,31 @@ class Trainer(Interpreter):
                 q_new = q_old + agent.alpha * td_error
                 agent.qtable.set_qvalue(s, a, q_new)
 
-            self.agent.sessions += 1
+            agent.increment_sessions()
             progress += 1
+            self.sigs.progressMade.emit()
 
             if self.delay > 0 and e < self.sessions - 1:
                 time.sleep(self.delay * 2)
 
-        if self.print:
+        if self.printOn:
             print("\n########################################\n")
             print("Training finished.")
 
-        agent.save_to_file()
-        if self.canceled:
-            self.trainingCanceled.emit(progress)
-        else:
-            self.trainingFinished.emit()
+        agent.save_to_file(self.filepath)
+        if not self.aborted:
+            if maxRewards == float('-inf'):
+                maxRewards = 0
+            self.sigs.trainingFinished.emit(
+                progress, maxRewards, maxLength, maxTime
+            )
 
-
-class Player(Interpreter):
-
-    playSessionFinished = Signal(list, list, list)
-
-    def __init__(self, environment, agent, sessions, parent=None):
-        super().__init__(environment, agent, sessions, parent)
-
-    def run(self):
+    def play(self):
+        agent = self.factory.agent_from_file(self.filepath)
         rewards = []
         lengths = []
         times = []
-        agent = self.agent
+        progress = 0
 
         for e in range(self.sessions):
             if self.canceled:
@@ -144,11 +186,10 @@ class Player(Interpreter):
 
             self.env.new_game()
 
-            if self.print:
-
+            if self.printOn:
                 print("\n########################################\n")
                 if e == 0:
-                    print("Starting play sessions.\n")
+                    print("Starting play session.\n")
                 print(f"Game {e + 1}/{self.sessions}\n")
 
             if self.delay > 0:
@@ -168,10 +209,9 @@ class Player(Interpreter):
                 self.env.move_snake(action)
                 total_reward += self.env.get_reward(agent.rewards)
                 time_alive += 1
-                if self.print:
+                if self.printOn:
                     print(f"\n{state}")
                     print(f"{str(action)}")
-                self.env.move_snake(action)
                 if self.delay > 0:
                     time.sleep(self.delay)
             if self.canceled:
@@ -179,15 +219,19 @@ class Player(Interpreter):
             rewards.append(total_reward)
             lengths.append(len(self.env.snake))
             times.append(time_alive)
+            progress += 1
 
-            if self.print:
+            if self.printOn:
                 print("\nGame finished")
                 print(f"final length: {len(self.env.snake)}")
                 print(f"time alive: {time_alive}")
                 print(f"total rewards: {total_reward}")
 
-        if self.print:
+        if self.printOn:
             print("\n########################################\n")
             print("Play session finished.")
-        self.playSessionFinished.emit(rewards, lengths, times)
-        return {"rewards": rewards, "lengths": lengths, "times": times}
+
+        if not self.aborted:
+            self.sigs.playSessionFinished.emit(
+                progress, rewards, lengths, times
+            )

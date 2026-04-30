@@ -14,13 +14,13 @@ class QTable:
             }
 
     def __init__(self):
-        self.qtable = {}
+        self.table = {}
 
     def get_state_values(self, state):
-        qvalues = self.qtable.get(state.key, None)
+        qvalues = self.table.get(state.key, None)
         if qvalues is None:
             self.init_state(state)
-            qvalues = self.qtable[state.key]
+            qvalues = self.table[state.key]
         return qvalues
 
     def get_qvalue(self, state, action):
@@ -31,23 +31,39 @@ class QTable:
         qvalues = self.get_state_values(state)
         qvalues[action] = value
 
-    def get_best_action(self, state):
+    def best_action(self, state):
         qvalues = self.get_state_values(state)
         max_q = max(qvalues)
         return random.choice([a for a in Dr if qvalues[a] == max_q])
 
-    def init_state(self, state):
-        headX = state.row.find(Tl.HEAD)
-        headY = state.col.find(Tl.HEAD)
-        down = state.col[headY + 1]
-        up = state.col[headY - 1]
-        left = state.row[headX - 1]
-        right = state.row[headX + 1]
-        self.qtable[state.key] = [0] * len(Dr)
-        self.qtable[state.key][Dr.DOWN] = self.tileValues[down]
-        self.qtable[state.key][Dr.UP] = self.tileValues[up]
-        self.qtable[state.key][Dr.LEFT] = self.tileValues[left]
-        self.qtable[state.key][Dr.RIGHT] = self.tileValues[right]
+    def random_action(self, state):
+        print("\n[RANDOM ACTION]")
+        options = list(Dr)
+        x, y = state.headX, state.headY
+        while len(options) > 0:
+            action = random.choice(options)
+            if action == Dr.UP and state.col[y - 1] in (Tl.WALL, Tl.BODY):
+                options.remove(action)
+            elif action == Dr.DOWN and state.col[y + 1] in (Tl.WALL, Tl.BODY):
+                options.remove(action)
+            elif action == Dr.LEFT and state.row[x - 1] in (Tl.WALL, Tl.BODY):
+                options.remove(action)
+            elif action == Dr.RIGHT and state.row[x + 1] in (Tl.WALL, Tl.BODY):
+                options.remove(action)
+            else:
+                return action
+        return random.choice(list(Dr))
 
-    def set_table(self, qtable):
-        self.qtable = qtable
+    def init_state(self, state):
+        # down = state.col[state.headY + 1]
+        # up = state.col[state.headY - 1]
+        # left = state.row[state.headX - 1]
+        # right = state.row[state.headX + 1]
+        self.table[state.key] = [0] * 4
+        # self.table[state.key][Dr.DOWN] = self.tileValues[down]
+        # self.table[state.key][Dr.UP] = self.tileValues[up]
+        # self.table[state.key][Dr.LEFT] = self.tileValues[left]
+        # self.table[state.key][Dr.RIGHT] = self.tileValues[right]
+
+    def set_table(self, table):
+        self.table = table

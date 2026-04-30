@@ -2,7 +2,7 @@ import random
 import json
 import os
 from qtable import QTable
-from enums import Direction as Dr, Tile as Tl
+from enums import Status as St
 from rewards import RewardStructure
 
 
@@ -23,138 +23,52 @@ class AgentFactory:
     def new(self, td_n=1, epsilon=0.5, alpha=0.1, gamma=0.9, rewards=None,
             name=None, color=None, filepath=None):
         agent = Agent()
-        agent.set_file_path(filepath)
         agent.set_learning_params(td_n, epsilon, alpha, gamma)
         if rewards is not None:
             agent.set_rewards(rewards)
         agent.set_name(self.random_name() if name is None else name)
         agent.set_color(self.random_color() if color is None else color)
+        agent.save_to_file(filepath)
         return agent
 
-    def validate_file(self, data):
-        keys = {'td_n', 'epsilon', 'alpha', 'gamma', 'qtable', 'rewards',
-                'name', 'sessions', 'color'}
-        if not isinstance(data, dict) or set(data.keys()) != keys:
-            raise ValueError("Wrong data type.")
-
-        if not isinstance(data['td_n'], int) \
-                or data['td_n'] < 0:
-            raise ValueError("Wrong value for td_n.")
-
-        if not isinstance(data['epsilon'], float) \
-                and not isinstance(data['epsilon'], int) \
-                or data['epsilon'] < 0 \
-                or data['epsilon'] > 1:
-            raise ValueError("Wrong value for epsilon.")
-
-        if not isinstance(data['alpha'], float) \
-                and not isinstance(data['alpha'], int) \
-                or data['alpha'] < 0 \
-                or data['alpha'] > 1:
-            raise ValueError("Wrong value for alpha.")
-
-        if not isinstance(data['gamma'], float) \
-                and not isinstance(data['gammma'], int) \
-                or data['gamma'] < 0 \
-                or data['gamma'] > 1:
-            raise ValueError("Wrong value for gamma.")
-
-        if not isinstance(data['name'], str):
-            raise ValueError("Wrong data type for name.")
-        if len(data['name'] > 15):
-            raise ValueError("Name too long.")
-
-        if not isinstance(data['sessions'], int) \
-                or data['sessions'] < 0:
-            raise ValueError("Wrong value for number of sessions")
-
-        if not isinstance(data['color'], list) \
-                or len(data['color']) != 3:
-            raise ValueError("Wrong data type for color.")
-        for c in data['color']:
-            if not isinstance(c, int) or c < 0 or c > 255:
-                raise ValueError("Wrong value in color.")
-
-        keys = {'rewards', 'target_len', 'penalty'}
-        if not isinstance(data['rewards'], dict) \
-                or set(data['rewards'].keys()) != keys:
-            raise ValueError("Wrong data type for reward structure.")
-
-        if not isinstance(data['rewards']['target_len'], int) \
-                or data['rewards']['target_len'] < 0 \
-                or data['rewards']['target_len'] > 100:
-            raise ValueError("Wrong value for target length.")
-
-        if not isinstance(data['rewards']['penalty'], int) \
-                or data['rewards']['penalty'] < -100 \
-                or data['rewards']['penalty'] > 0:
-            raise ValueError("Wrong value for penalty.")
-
-        keys = {'alive', 'dead', 'green', 'red'}
-        if not isinstance(data['rewards']['rewards'], dict) \
-                or set(data['rewards']['rewards'].keys()) != keys:
-            raise ValueError("Wrong data type for reward values.")
-        for v in data['rewards']['rewards'].values():
-            if not isinstance(v, int) and not isinstance(v, float):
-                raise ValueError("Wrong data type for reward values.")
-        if data['rewards']['rewards']['alive'] < 0 \
-                or data['rewards']['rewards']['alive'] > 100:
-            raise ValueError("Wrong value for alive reward.")
-        if data['rewards']['rewards']['dead'] < -100 \
-                or data['rewards']['rewards']['dead'] >= 0:
-            raise ValueError("Wrong value for dead reward.")
-        if data['rewards']['rewards']['green'] <= 0 \
-                or data['rewards']['rewards']['green'] > 100:
-            raise ValueError("Wrong value for green reward.")
-        if data['rewards']['rewards']['red'] < -100 \
-                or data['rewards']['rewards']['red'] >= 0:
-            raise ValueError("Wrong value for red reward.")
-
-        if not isinstance(data['qtable'], dict):
-            raise ValueError("Wrong data type for qtable.")
-        for state, actions in data['qtable']:
-            if not isinstance(state, str) or len(state) != 24:
-                raise ValueError(
-                    "Wrong data type for state key inside qtable."
-                )
-            for c in state:
-                if c not in "0WHSRG":
-                    raise ValueError("Wrong state key format inside qtable.")
-            if not isinstance(actions, list) or len(actions) != 4:
-                raise ValueError("Wrong data type for actions inside qtable.")
-            for a in actions:
-                if not isinstance(a, int) and not isinstance(a, float):
-                    raise ValueError(
-                        "Wrong data type for actions inside qtable."
-                    )
-
-    def from_file(self, filepath):
+    def data_from_file(self, filepath):
+        filepath = os.path.expanduser(filepath)
         if not filepath.endswith(".l2s"):
             raise NotAnAgentFile("Wrong file extension.")
         with open(filepath, 'r') as f:
             data = json.load(f)
             self.validate_file(data)
-            agent = Agent()
-            agent.set_file_path(filepath)
-            agent.rewards.set_target_len(data['rewards']['target_len'])
-            agent.rewards.set_penalty(data['rewards']['penalty'])
-            agent.rewards.set_rewards(
-                data['rewards']['rewards']['alive'],
-                data['rewards']['rewards']['dead'],
-                data['rewards']['rewards']['green'],
-                data['rewards']['rewards']['red']
-            )
-            agent.set_learning_params(
-                data['td_n'],
-                data['epsilon'],
-                data['alpha'],
-                data['gamma']
-            )
-            agent.qtable.set_table(data['qtable']['qtable'])
-            agent.set_name(data['name'])
-            agent.set_color(data['color'])
-            agent.sessions = data['sessions']
-            return agent
+            return data
+
+    def info_from_file(self, filepath):
+        info = self.data_from_file(filepath)
+        info.pop('qtable')
+        return info
+
+    def agent_from_data(self, data):
+        agent = Agent()
+        agent.rewards.set_target_len(data['target_len'])
+        agent.rewards.set_penalty(data['penalty'])
+        agent.rewards.set_rewards(
+            data['alive'],
+            data['dead'],
+            data['green'],
+            data['red']
+        )
+        agent.set_learning_params(
+            data['td_n'],
+            data['epsilon'],
+            data['alpha'],
+            data['gamma']
+        )
+        agent.qtable.set_table(data['qtable'])
+        agent.set_name(data['name'])
+        agent.set_color(data['color'])
+        agent.sessions = data['sessions']
+        return agent
+
+    def agent_from_file(self, filepath):
+        return self.agent_from_data(self.data_from_file(filepath))
 
     @staticmethod
     def default_filepath(name):
@@ -193,41 +107,116 @@ class AgentFactory:
                 if random.random() < 0.1:
                     name += random.choice(list(vowels))
 
-        return name.title() + str(random.randint(0, 999))
+        return name.title() + str(random.randint(1, 999))
+
+    def validate_file(self, data):
+        keys = {'name', 'color', 'td_n', 'alpha', 'epsilon', 'gamma',
+                'alive', 'dead', 'green', 'red', 'target_len',
+                'penalty', 'sessions', 'qtable'}
+        if not isinstance(data, dict) or set(data.keys()) != keys:
+            raise ValueError("Wrong data type.")
+
+        if not isinstance(data['name'], str):
+            raise ValueError("Wrong data type for name.")
+        if len(data['name']) > 20:
+            raise ValueError("Name too long.")
+
+        if not isinstance(data['color'], list) \
+                or len(data['color']) != 3:
+            raise ValueError("Wrong data type for color.")
+        for c in data['color']:
+            if not isinstance(c, int) or c < 0 or c > 255:
+                raise ValueError("Wrong value in color.")
+
+        if not isinstance(data['td_n'], int) \
+                or data['td_n'] < 0:
+            raise ValueError("Wrong value for td_n.")
+
+        if not isinstance(data['alpha'], float) \
+                and not isinstance(data['alpha'], int) \
+                or data['alpha'] < 0 \
+                or data['alpha'] > 1:
+            raise ValueError("Wrong value for alpha.")
+
+        if not isinstance(data['epsilon'], float) \
+                and not isinstance(data['epsilon'], int) \
+                or data['epsilon'] < 0 \
+                or data['epsilon'] > 1:
+            raise ValueError("Wrong value for epsilon.")
+
+        if not isinstance(data['gamma'], float) \
+                and not isinstance(data['gamma'], int) \
+                or data['gamma'] < 0 \
+                or data['gamma'] > 1:
+            raise ValueError("Wrong value for gamma.")
+
+        if not isinstance(data['alive'], float) \
+                and not isinstance(data['alive'], int) \
+                or data['alive'] < 0 or data['alive'] > 100:
+            raise ValueError("Wrong value for alive reward.")
+
+        if not isinstance(data['dead'], float) \
+                and not isinstance(data['dead'], int) \
+                or data['dead'] < -100 or data['dead'] >= 0:
+            raise ValueError("Wrong value for dead reward.")
+
+        if not isinstance(data['green'], float) \
+                and not isinstance(data['green'], int) \
+                or data['green'] <= 0 or data['green'] > 100:
+            raise ValueError("Wrong value for green reward.")
+
+        if not isinstance(data['red'], float) \
+                and not isinstance(data['red'], int) \
+                or data['red'] < -100 or data['red'] >= 0:
+            raise ValueError("Wrong value for red reward.")
+
+        if not isinstance(data['target_len'], int) \
+                or data['target_len'] < 0 \
+                or data['target_len'] > 100:
+            raise ValueError("Wrong value for target length.")
+
+        if not isinstance(data['penalty'], int) \
+                or data['penalty'] < -100 \
+                or data['penalty'] > 0:
+            raise ValueError("Wrong value for penalty.")
+
+        if not isinstance(data['sessions'], int) \
+                or data['sessions'] < 0:
+            raise ValueError("Wrong value for number of sessions")
+
+        if not isinstance(data['qtable'], dict):
+            raise ValueError("Wrong data type for qtable.")
+        for state, actions in data['qtable'].items():
+            if not isinstance(state, str) or len(state) != 24:
+                raise ValueError(
+                    "Wrong data type for state key inside qtable."
+                )
+            if not all(c in "0WHSRG" for c in state):
+                raise ValueError("Wrong state key format inside qtable.")
+            if not isinstance(actions, list) or len(actions) != 4:
+                raise ValueError("Wrong data type for actions inside qtable.")
+            if not all(isinstance(a, int) or isinstance(a, float)
+                       for a in actions):
+                raise ValueError("Wrong data type for actions inside qtable.")
 
 
-class Agent:
+class Agent():
 
     def __init__(self):
+        super().__init__()
         # td_n: temporal difference degree
         # epsilon: exploration rate
         # alpha: learning rate
         # gamma: discount factor
-        self.filepath = None
-        self.td_n = 0
-        self.epsilon = 0
-        self.alpha = 0
-        self.gamma = 0
+        self.td_n = 1
+        self.epsilon = 0.5
+        self.alpha = 0.1
+        self.gamma = 0.9
         self.qtable = QTable()
         self.rewards = RewardStructure()
         self.name = "Noname"
         self.sessions = 0
         self.color = [0, 0, 0]
-
-    def set_file_path(self, filepath):
-        if filepath is None or filepath == "":
-            self.filepath = None
-            return
-        basename = os.path.basename(filepath)
-        if basename is None or basename == "":
-            raise ValueError("No filename provided.")
-        if basename[0] == '.':
-            raise ValueError("The file's name can't start with '.'")
-        if not basename.endswith(".l2s"):
-            raise ValueError("The file must have the .l2s extension.")
-        if '/' not in filepath:
-            filepath = f"./{filepath}"
-        self.filepath = filepath
 
     def set_learning_params(self, td_n, epsilon, alpha, gamma):
         self.td_n = td_n
@@ -244,43 +233,58 @@ class Agent:
     def set_color(self, color):
         self.color = color
 
+    def increment_sessions(self):
+        self.sessions += 1
+
     def choose_action(self, state, training=True):
         if training and random.random() < self.epsilon:
-            return self.random_action(state)
-        return self.qtable.get_best_action(state)
+            return self.qtable.random_action(state)
+        return self.qtable.best_action(state)
 
-    def random_action(self, state):
-        options = list(Dr)
-        x, y = state.headX, state.headY
-        while len(options) > 0:
-            action = random.choice(options)
-            if action == Dr.UP and state.col[y - 1] in (Tl.WALL, Tl.BODY):
-                options.remove(action)
-            elif action == Dr.DOWN and state.col[y + 1] in (Tl.WALL, Tl.BODY):
-                options.remove(action)
-            elif action == Dr.LEFT and state.row[x - 1] in (Tl.WALL, Tl.BODY):
-                options.remove(action)
-            elif action == Dr.RIGHT and state.row[x + 1] in (Tl.WALL, Tl.BODY):
-                options.remove(action)
-            else:
-                return action
-        return random.choice(list(Dr))
+    def get_info(self):
+        return {
+            'name': self.name,
+            'color': self.color,
+            'td_n': self.td_n,
+            'alpha': self.alpha,
+            'epsilon': self.epsilon,
+            'gamma': self.gamma,
+            'alive': self.rewards.rewards[St.ALIVE],
+            'dead': self.rewards.rewards[St.DEAD],
+            'green': self.rewards.rewards[St.GREEN],
+            'red': self.rewards.rewards[St.RED],
+            'target_len': self.rewards.target_len,
+            'penalty': self.rewards.penalty,
+            'sessions': self.sessions
+        }
 
-    def save_to_file(self):
-        path = ""
-        if self.filepath is None:
-            path = AgentFactory.default_filepath(self.name)
-        else:
-            path = os.path.expanduser(self.filepath)
-        if not os.path.exists(os.path.dirname(path)):
-            os.makedirs(os.path.dirname(path))
-        with open(path, 'w') as f:
-            json.dump(
-                self,
-                f,
-                default=lambda o: o.__dict__,
-                separators=(',', ':')
-            )
+    def get_data(self):
+        data = self.get_info()
+        data['qtable'] = self.qtable.table
+        return data
+
+    def save_to_file(self, filepath=None):
+        if filepath is None or filepath == "":
+            filepath = AgentFactory.default_filepath(self.name)
+
+        filepath = os.path.expanduser(filepath)
+        dirname, basename = os.path.split(filepath)
+
+        if basename is None or basename == "":
+            raise ValueError("No filename provided.")
+        if basename[0] == '.':
+            raise ValueError("The file's name can't start with '.'")
+        if not basename.endswith(".l2s"):
+            raise ValueError("The file must have the .l2s extension.")
+
+        if '/' not in filepath:
+            filepath = f"./{filepath}"
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+
+        data = self.get_data()
+        with open(filepath, 'w') as f:
+            json.dump(data, f, separators=(',', ':'))
 
 
 if __name__ == "__main__":
