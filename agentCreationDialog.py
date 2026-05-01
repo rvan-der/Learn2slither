@@ -221,8 +221,10 @@ penalty isn't applied anymore.""")
         penaltyLabel.setToolTip(
             """This penalty is applied to all scores except for green
 while the snake is under the target length.""")
-        self.penaltySpinBox = QSpinBox()
+        self.penaltySpinBox = QDoubleSpinBox()
         self.penaltySpinBox.setRange(-100, 0)
+        self.penaltySpinBox.setSingleStep(0.1)
+        self.penaltySpinBox.setAccelerated(True)
         self.penaltySpinBox.setValue(self.defaultParams['penalty'])
         penaltyLayout = QHBoxLayout()
         penaltyLayout.setSpacing(5)

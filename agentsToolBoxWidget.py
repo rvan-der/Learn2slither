@@ -1,19 +1,23 @@
-from uiElements import SubtitleLine
+from uiElements import (SubtitleLine, MessagePopup)
 from enums import Status as St
 from agent import AgentFactory
 from PySide6.QtWidgets import (QWidget, QSizePolicy, QGridLayout,
                                QPushButton, QLabel, QSpinBox,
                                QSpacerItem, QHBoxLayout, QVBoxLayout,
-                               QDialog)
-from PySide6.QtCore import (Qt, Slot)
+                               QDialog, QLineEdit, QFileDialog,
+                               QDialogButtonBox)
+from PySide6.QtCore import (Qt, Slot, QSize)
+from PySide6.QtGui import QIcon
+import resources_rc  # noqa
 
 
 class ModelInfoPopup(QDialog):
-    def __init__(self, agent, parent=None):
+    def __init__(self, info, parent=None):
         super().__init__(parent=parent)
         self.setAttribute(Qt.WA_StyledBackground, True)
-        self.setStyleSheet("""QDialog{background-color: rgb(40, 48, 56);
-border: 2px ridge grey}""")
+        self.setWindowTitle("Model")
+        self.setStyleSheet("""QWidget {background-color: rgb(40, 48, 56)}
+QDialog {border: 2px ridge grey}""")
 
         tdnLabel = QLabel("td_n:")
         tdnLabel.setToolTip("Temporal difference degree")
@@ -41,27 +45,27 @@ while the snake is under the target length.""")
             0, 0, 1, 5,
             alignment=Qt.AlignBottom
         )
-        mainLayout.addWidget(tdnLabel, 1, 0, alignment=Qt.AlignLeft)
+        mainLayout.addWidget(tdnLabel, 1, 0, alignment=Qt.AlignRight)
         mainLayout.addWidget(
-            QLabel(f"{agent.td_n}"),
+            QLabel(f"{info['td_n']}"),
             1, 1,
             alignment=Qt.AlignLeft
         )
-        mainLayout.addWidget(alphaLabel, 1, 3, alignment=Qt.AlignLeft)
+        mainLayout.addWidget(alphaLabel, 1, 3, alignment=Qt.AlignRight)
         mainLayout.addWidget(
-            QLabel(f"{agent.alpha}"),
+            QLabel(f"{info['alpha']}"),
             1, 4,
             alignment=Qt.AlignLeft
         )
-        mainLayout.addWidget(epsilonLabel, 2, 0, alignment=Qt.AlignLeft)
+        mainLayout.addWidget(epsilonLabel, 2, 0, alignment=Qt.AlignRight)
         mainLayout.addWidget(
-            QLabel(f"{agent.epsilon}"),
+            QLabel(f"{info['epsilon']}"),
             2, 1,
             alignment=Qt.AlignLeft
         )
-        mainLayout.addWidget(gammaLabel, 2, 3, alignment=Qt.AlignLeft)
+        mainLayout.addWidget(gammaLabel, 2, 3, alignment=Qt.AlignRight)
         mainLayout.addWidget(
-            QLabel(f"{agent.gamma}"),
+            QLabel(f"{info['gamma']}"),
             2, 4,
             alignment=Qt.AlignLeft
         )
@@ -75,42 +79,42 @@ while the snake is under the target length.""")
             alignment=Qt.AlignBottom
         )
         mainLayout.addWidget(
-            QLabel("alive:"), 5, 0, alignment=Qt.AlignLeft
+            QLabel("alive:"), 5, 0, alignment=Qt.AlignRight
         )
         mainLayout.addWidget(
-            QLabel(f"{agent.rewards.rewards[St.ALIVE]}"),
+            QLabel(f"{info['alive']}"),
             5, 1, alignment=Qt.AlignLeft
         )
         mainLayout.addWidget(
-            QLabel("dead:"), 5, 3, alignment=Qt.AlignLeft
+            QLabel("dead:"), 5, 3, alignment=Qt.AlignRight
         )
         mainLayout.addWidget(
-            QLabel(f"{agent.rewards.rewards[St.DEAD]}"),
+            QLabel(f"{info['dead']}"),
             5, 4, alignment=Qt.AlignLeft
         )
         mainLayout.addWidget(
-            QLabel("green:"), 6, 0, alignment=Qt.AlignLeft
+            QLabel("green:"), 6, 0, alignment=Qt.AlignRight
         )
         mainLayout.addWidget(
-            QLabel(f"{agent.rewards.rewards[St.GREEN]}"),
+            QLabel(f"{info['green']}"),
             6, 1, alignment=Qt.AlignLeft
         )
         mainLayout.addWidget(
-            QLabel("red:"), 6, 3, alignment=Qt.AlignLeft
+            QLabel("red:"), 6, 3, alignment=Qt.AlignRight
         )
         mainLayout.addWidget(
-            QLabel(f"{agent.rewards.rewards[St.RED]}"),
+            QLabel(f"{info['red']}"),
             6, 4, alignment=Qt.AlignLeft
         )
         mainLayout.addWidget(targetLenLabel, 7, 0, alignment=Qt.AlignLeft)
         mainLayout.addWidget(
-            QLabel(f"{agent.rewards.target_len}"),
-            7, 1, alignment=Qt.AlignLeft
+            QLabel(f"{info['target_len']}"),
+            7, 1, alignment=Qt.AlignRight
         )
         mainLayout.addWidget(penaltyLabel, 7, 3, alignment=Qt.AlignLeft)
         mainLayout.addWidget(
-            QLabel(f"{agent.rewards.penalty}"),
-            7, 4, alignment=Qt.AlignLeft
+            QLabel(f"{info['penalty']}"),
+            7, 4, alignment=Qt.AlignRight
         )
 
         self.setLayout(mainLayout)
@@ -132,7 +136,7 @@ class AgentsToolBoxWidget(QWidget):
         trainButton = QPushButton("Train")
 
         self.episodesSpinBox = QSpinBox()
-        self.episodesSpinBox.setRange(1, 100000)
+        self.episodesSpinBox.setRange(1, 1000000)
         self.episodesSpinBox.setValue(1)
         self.episodesSpinBox.setAccelerated(True)
         self.episodesSpinBox.returnPressed.connect(
@@ -158,7 +162,7 @@ class AgentsToolBoxWidget(QWidget):
         self.playButton.clicked.connect(self.playAgent)
 
         self.gamesSpinBox = QSpinBox()
-        self.gamesSpinBox.setRange(1, 100000)
+        self.gamesSpinBox.setRange(1, 1000000)
         self.gamesSpinBox.setValue(1)
         self.gamesSpinBox.setAccelerated(True)
         self.gamesSpinBox.returnPressed.connect(
@@ -193,15 +197,44 @@ class AgentsToolBoxWidget(QWidget):
         infoWidget = QWidget()
         infoWidget.setLayout(infoLayout)
 
+        fileLineEdit = QLineEdit()
+        fileLineEdit.setText(self.filepath)
+        fileLineEdit.setReadOnly(True)
+        fileLineEdit.setStyleSheet(
+            """QLineEdit {background-color: rgb(60, 72, 90);
+border-radius: 4px}"""
+        )
+
+        copyButton = QPushButton()
+        copyButton.setIcon(QIcon(":/assets/copy_icon.png"))
+        copyButton.setIconSize(QSize(20, 20))
+        copyButton.setToolTip("Copy snake")
+
+        deleteButton = QPushButton()
+        deleteButton.setIcon(QIcon(":/assets/delete_icon.png"))
+        deleteButton.setIconSize(QSize(20, 20))
+        deleteButton.setToolTip("/!\\ Delete snake /!\\")
+
+        fileLayout = QHBoxLayout()
+        fileLayout.addWidget(fileLineEdit)
+        fileLayout.addWidget(copyButton)
+        fileLayout.addWidget(deleteButton)
+
+        fileWidget = QWidget()
+        fileWidget.setLayout(fileLayout)
+
         mainLayout = QVBoxLayout(self)
         mainLayout.setSpacing(6)
         mainLayout.setContentsMargins(6, 0, 6, 0)
         mainLayout.addWidget(SubtitleLine("Actions"))
         mainLayout.addWidget(trainWidget)
         mainLayout.addWidget(playWidget)
-        mainLayout.addSpacing(10)
+        mainLayout.addSpacing(15)
         mainLayout.addWidget(SubtitleLine("Info"))
         mainLayout.addWidget(infoWidget)
+        mainLayout.addSpacing(15)
+        mainLayout.addWidget(SubtitleLine("File"))
+        mainLayout.addWidget(fileWidget)
         mainLayout.addSpacerItem(QSpacerItem(
             0, 0,
             QSizePolicy.Preferred,
@@ -211,12 +244,14 @@ class AgentsToolBoxWidget(QWidget):
 
         trainButton.clicked.connect(self.trainAgent)
         modelInfoButton.clicked.connect(self.model_info)
+        copyButton.clicked.connect(self.select_file)
+        deleteButton.clicked.connect(self.delete_agent)
 
-    @Slot()
-    def increment_sessions(self):
-        self.agentInfo['sessions'] += 1
+    @Slot(int)
+    def update_sessions(self, sessions):
+        self.agentInfo['sessions'] = sessions
         self.sessionsLabel.setText(
-            f"Training sessions: {self.agentInfo['sessions']}"
+            f"Training sessions: {sessions}"
         )
 
     @Slot()
@@ -230,11 +265,37 @@ class AgentsToolBoxWidget(QWidget):
     def playAgent(self):
         self.toolBox.playAgentSignal.emit(
             self.filepath,
-            self.episodesSpinBox.value()
+            self.gamesSpinBox.value()
         )
 
     @Slot()
+    def delete_agent(self):
+        msgPopup = MessagePopup(
+            f"""Are you sure you want to delete {self.agentInfo['name']} ?
+file: {self.filepath}""",
+            "red",
+            self,
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel,
+            "/!\\ Attention /!\\"
+        )
+        msgPopup.accepted.connect(self.toolBox.deleteAgentSignal.emit)
+        msgPopup.finished.connect(msgPopup.deleteLater)
+        msgPopup.open()
+
+    @Slot()
+    def select_file(self):
+        dialog = QFileDialog(self)
+        dialog.setDefaultSuffix("l2s")
+        dialog.setNameFilter("*.l2s")
+        dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
+        dialog.fileSelected.connect(self.copy_file)
+        dialog.open()
+
+    def copy_file(self, destFile):
+        self.toolBox.copyAgentSignal.emit(self.filepath, destFile)
+
+    @Slot()
     def model_info(self):
-        popup = ModelInfoPopup(self.agent, parent=self)
+        popup = ModelInfoPopup(self.agentInfo, parent=self)
         popup.finished.connect(popup.deleteLater)
         popup.open()

@@ -55,16 +55,17 @@ class SubtitleLine(QWidget):
 
 
 class MessagePopup(QDialog):
-    def __init__(self, text, color=None, parent=None):
+    def __init__(self, text, color=None, parent=None,
+                 buttons=QDialogButtonBox.Ok, title=" "):
         super().__init__(parent=parent)
         self.setAttribute(Qt.WA_StyledBackground, True)
-        style = """QDialog{background-color: rgb(40, 48, 56);
-border: 2px ridge grey}"""
+        style = """QWidget {background-color: rgb(40, 48, 56)}
+QDialog {border: 2px ridge grey}"""
         if color is not None:
             style += "\nQLabel {color: " + color + "}"
         self.setStyleSheet(style)
 
-        self.setWindowTitle(" ")
+        self.setWindowTitle(title)
 
         layout = QGridLayout()
 
@@ -75,7 +76,7 @@ border: 2px ridge grey}"""
         label.setFont(font)
         layout.addWidget(label, 0, 0, alignment=Qt.AlignCenter)
 
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok)
+        buttonBox = QDialogButtonBox(buttons)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
         self.finished.connect(self.deleteLater)

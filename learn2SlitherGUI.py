@@ -1,7 +1,7 @@
 import sys
 import os
-from statistics import median
 from interpreter import Interpreter
+from agent import AgentFactory
 from l2sMainWindow import Ui_l2sMainWindow
 from boardWidget import BoardWidget
 from stdoutTextEdit import StdoutTextEdit
@@ -10,22 +10,8 @@ from playerWidget import PlayerWidget
 from uiElements import MessagePopup
 from agentCreationDialog import AgentCreationDialog
 from PySide6.QtWidgets import (QApplication, QMainWindow, QMenu)
-from PySide6.QtCore import (Signal, Slot, QEvent, QThreadPool)
+from PySide6.QtCore import (Signal, Slot, QThreadPool)
 from PySide6.QtGui import QAction
-
-
-class MyMenu(QMenu):
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-    def eventFilter(self, obj, event):
-        if event.type() == QEvent.MouseButtonRelease \
-                and isinstance(obj, QMenu) \
-                and obj.activeAction().isCheckable():
-            obj.activeAction().trigger()
-            return True
-        return super().eventFilter(obj, event)
 
 
 class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
@@ -37,24 +23,14 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setupUi(self)
+        self.factory = AgentFactory()
         self.aborted = False
         self.displayOn = True
         self.printOn = True
         self.threadpool = QThreadPool()
-        # self.interpreter = None
 
-        self.displayOnAction = QAction("Board display")
-        self.displayOnAction.setCheckable(True)
         self.displayOnAction.setChecked(True)
-
-        self.printOnAction = QAction("Print to stdout")
-        self.printOnAction.setCheckable(True)
         self.printOnAction.setChecked(True)
-
-        settingsMenu = QMenu("Settings")
-        settingsMenu.addAction(self.displayOnAction)
-        settingsMenu.addAction(self.printOnAction)
-        self.menubar.addMenu(settingsMenu)
 
         self.boardWidget = BoardWidget()
         self.boardFrameLayout.insertWidget(0, self.boardWidget)
@@ -72,6 +48,8 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
         self.agentsToolBox.currentChanged.connect(self.set_agent_color)
         self.agentsToolBox.trainAgentSignal.connect(self.train_agent)
         self.agentsToolBox.playAgentSignal.connect(self.play_agent)
+        self.agentsToolBox.copyAgentSignal.connect(self.copy_agent)
+        self.agentsToolBox.deleteAgentSignal.connect(self.delete_agent)
         self.createAgentButton.clicked.connect(self.create_agent)
         self.displayOnAction.toggled.connect(self.change_display_on)
         self.printOnAction.toggled.connect(self.change_print_on)
@@ -82,6 +60,8 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
 
     @Slot(int)
     def set_agent_color(self, index):
+        if self.agentsToolBox.count() == 0:
+            return
         self.boardWidget.set_agent_color(
             self.agentsToolBox.widget(index).agentInfo['color']
         )
@@ -96,6 +76,8 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
     @Slot(bool)
     def change_print_on(self, printOn):
         self.printOn = printOn
+        if printOn == False:
+            self.stdoutTextEdit.clear()
         self.printOnChanged.emit(printOn)
 
     def import_folder(self, folder):
@@ -104,7 +86,7 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
             for item in os.listdir(folder_path):
                 filepath = f"{folder_path}/{item}"
                 if os.path.isfile(filepath) and filepath.endswith(".l2s"):
-                    self.agentsToolBox.addAgent(filepath)
+                    self.agentsToolBox.add_agent(filepath)
 
     def populate(self):
         self.import_folder(
@@ -112,10 +94,40 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
         )
         self.import_folder("~/.local/Learn2Slither/agents")
 
+    @Slot(str, str)
+    def copy_agent(self, srcFile, destFile):
+        agent = self.factory.agent_from_file(srcFile)
+        try:
+            agent.save_to_file(destFile)
+        except Exception as e:
+            msgPopup = MessagePopup(
+                f"Couldn't copy the agent:\n{e}", "red", self
+            )
+            msgPopup.finished.connect(msgPopup.deleteLater)
+            msgPopup.open()
+            return
+        self.agentsToolBox.add_agent(destFile)
+
+    @Slot()
+    def delete_agent(self):
+        widget = self.agentsToolBox.currentWidget()
+        try:
+            os.remove(widget.filepath)
+        except Exception as e:
+            msgPopup = MessagePopup(
+                f"Couldn't delete '{widget.filepath}':\n{e}",
+                parent=self
+            )
+            msgPopup.finished.connect(msgPopup.deleteLater)
+            msgPopup.open()
+            return
+        self.agentsToolBox.removeItem(self.agentsToolBox.currentIndex())
+        widget.deleteLater()
+
     @Slot()
     def create_agent(self):
         dialog = AgentCreationDialog(self)
-        dialog.agentCreated.connect(self.agentsToolBox.addAgent)
+        dialog.agentCreated.connect(self.agentsToolBox.add_agent)
         dialog.open()
 
     @Slot(str, int)
@@ -142,7 +154,9 @@ Max rewards: {maxRwds}
         title = "Play session finished !\n\n"
         msg = "0 games finished. No results to show."
         if progress > 0:
-            msg = self.play_stats_message(progress, rewards, lengths, times)
+            msg = Interpreter.play_stats_message(
+                progress, rewards, lengths, times
+            )
         self.close_session(title + msg)
 
     def launch_session(self, filepath, sessions, train):
@@ -163,7 +177,7 @@ Max rewards: {maxRwds}
         worker.sigs.playSessionFinished.connect(self.play_session_finished)
         worker.sigs.trainingFinished.connect(self.training_finished)
         worker.sigs.progressMade.connect(
-            self.agentsToolBox.currentWidget().increment_sessions
+            self.agentsToolBox.currentWidget().update_sessions
         )
 
         self.displayOnChanged.connect(worker.set_display_on)
@@ -182,51 +196,6 @@ Max rewards: {maxRwds}
         msgPopup.finished.connect(self.boardWidget.clear_display)
         msgPopup.finished.connect(msgPopup.deleteLater)
         msgPopup.open()
-
-    def play_stats_message(self, progress, rewards, lengths, times):
-        st = self.play_stats(progress, rewards, lengths, times)
-        sepLine = "--------|" + "-----------|" * 5
-        msg = f"games: {st['games']}\n" + " " * 8
-        msg += f"""|   total   |    min    |    max    |   mean    \
-|  median   |
-{sepLine}
-rewards |     /     | {st['minimum']['reward']:<10}| \
-{st['maximum']['reward']:<10}| {st['mean']['reward']:<10}| \
-{st['median']['reward']:<10}|
-{sepLine}
-lengths | {st['total']['length']:<10}| {st['minimum']['length']:<10}| \
-{st['maximum']['length']:<10}| {st['mean']['length']:<10}| \
-{st['median']['length']:<10}|
-{sepLine}
-times   | {st['total']['time']:<10}| {st['minimum']['time']:<10}| \
-{st['maximum']['time']:<10}| {st['mean']['time']:<10}| \
-{st['median']['time']:<10}|"""
-        return msg
-
-    def play_stats(self, progress, rewards, lengths, times):
-        stats = {}
-        stats['games'] = progress
-        stats['total'] = {}
-        stats['minimum'] = {}
-        stats['maximum'] = {}
-        stats['mean'] = {}
-        stats['median'] = {}
-        stats['total']['reward'] = sum(rewards)
-        stats['total']['length'] = sum(lengths)
-        stats['total']['time'] = sum(times)
-        stats['minimum']['reward'] = min(rewards)
-        stats['minimum']['length'] = min(lengths)
-        stats['minimum']['time'] = min(times)
-        stats['maximum']['reward'] = max(rewards)
-        stats['maximum']['length'] = max(lengths)
-        stats['maximum']['time'] = max(times)
-        stats['median']['reward'] = round(median(rewards), 2)
-        stats['median']['length'] = round(median(lengths), 2)
-        stats['median']['time'] = round(median(times), 2)
-        stats['mean']['reward'] = round(stats['total']['reward'] / progress, 2)
-        stats['mean']['length'] = round(stats['total']['length'] / progress, 2)
-        stats['mean']['time'] = round(stats['total']['time'] / progress, 2)
-        return stats
 
     @Slot()
     def abort(self):

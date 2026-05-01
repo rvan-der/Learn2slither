@@ -176,7 +176,8 @@ class AgentFactory:
                 or data['target_len'] > 100:
             raise ValueError("Wrong value for target length.")
 
-        if not isinstance(data['penalty'], int) \
+        if not isinstance(data['penalty'], float) \
+                and not isinstance(data['penalty'], int) \
                 or data['penalty'] < -100 \
                 or data['penalty'] > 0:
             raise ValueError("Wrong value for penalty.")

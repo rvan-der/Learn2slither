@@ -11,14 +11,15 @@
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
     QMetaObject, QObject, QPoint, QRect,
     QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
+    QCursor, QFont, QFontDatabase, QGradient,
+    QIcon, QImage, QKeySequence, QLinearGradient,
+    QPainter, QPalette, QPixmap, QRadialGradient,
+    QTransform)
 from PySide6.QtWidgets import (QAbstractScrollArea, QApplication, QFrame, QHBoxLayout,
-    QLabel, QMainWindow, QMenuBar, QPushButton,
-    QScrollArea, QSizePolicy, QStatusBar, QVBoxLayout,
-    QWidget)
+    QLabel, QMainWindow, QMenu, QMenuBar,
+    QPushButton, QScrollArea, QSizePolicy, QStatusBar,
+    QVBoxLayout, QWidget)
 import resources_rc
 
 class Ui_l2sMainWindow(object):
@@ -33,8 +34,15 @@ class Ui_l2sMainWindow(object):
         l2sMainWindow.setSizePolicy(sizePolicy)
         l2sMainWindow.setMinimumSize(QSize(900, 700))
         l2sMainWindow.setWindowTitle(u"Learn 2 slither")
-        l2sMainWindow.setStyleSheet(u"QWidget {background-color: rgb(42, 51, 59);\n"
-"color: rgb(230, 230, 230)}")
+        l2sMainWindow.setStyleSheet(u"QWidget {background-color: rgb(42, 51, 59); color: rgb(230, 230, 230)} QMenuBar {background-color: rgb(35, 41, 50)} QMenu{background-color: rgb(60, 72, 90)}")
+        self.displayOnAction = QAction(l2sMainWindow)
+        self.displayOnAction.setObjectName(u"displayOnAction")
+        self.displayOnAction.setCheckable(True)
+        self.displayOnAction.setChecked(True)
+        self.printOnAction = QAction(l2sMainWindow)
+        self.printOnAction.setObjectName(u"printOnAction")
+        self.printOnAction.setCheckable(True)
+        self.printOnAction.setChecked(True)
         self.centralwidget = QWidget(l2sMainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -192,10 +200,16 @@ class Ui_l2sMainWindow(object):
         self.menubar = QMenuBar(l2sMainWindow)
         self.menubar.setObjectName(u"menubar")
         self.menubar.setGeometry(QRect(0, 0, 900, 24))
+        self.menuSettings = QMenu(self.menubar)
+        self.menuSettings.setObjectName(u"menuSettings")
         l2sMainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(l2sMainWindow)
         self.statusbar.setObjectName(u"statusbar")
         l2sMainWindow.setStatusBar(self.statusbar)
+
+        self.menubar.addAction(self.menuSettings.menuAction())
+        self.menuSettings.addAction(self.displayOnAction)
+        self.menuSettings.addAction(self.printOnAction)
 
         self.retranslateUi(l2sMainWindow)
 
@@ -206,6 +220,8 @@ class Ui_l2sMainWindow(object):
     # setupUi
 
     def retranslateUi(self, l2sMainWindow):
+        self.displayOnAction.setText(QCoreApplication.translate("l2sMainWindow", u"Board display", None))
+        self.printOnAction.setText(QCoreApplication.translate("l2sMainWindow", u"Print to stdout", None))
         self.agentsLabel.setText("")
 #if QT_CONFIG(tooltip)
         self.createAgentButton.setToolTip(QCoreApplication.translate("l2sMainWindow", u"Create a new snake", None))
@@ -215,6 +231,7 @@ class Ui_l2sMainWindow(object):
         self.importButton.setToolTip(QCoreApplication.translate("l2sMainWindow", u"Import a model file", None))
 #endif // QT_CONFIG(tooltip)
         self.importButton.setText("")
+        self.menuSettings.setTitle(QCoreApplication.translate("l2sMainWindow", u"Settings", None))
         pass
     # retranslateUi
 

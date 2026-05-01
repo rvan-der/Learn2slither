@@ -26,8 +26,7 @@
    <string notr="true">Learn 2 slither</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">QWidget {background-color: rgb(42, 51, 59);
-color: rgb(230, 230, 230)}</string>
+   <string notr="true">QWidget {background-color: rgb(42, 51, 59); color: rgb(230, 230, 230)} QMenuBar {background-color: rgb(35, 41, 50)} QMenu{background-color: rgb(60, 72, 90)}</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">
@@ -346,8 +345,38 @@ color: rgb(230, 230, 230)}</string>
      <height>24</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuSettings">
+    <property name="title">
+     <string>Settings</string>
+    </property>
+    <addaction name="displayOnAction"/>
+    <addaction name="printOnAction"/>
+   </widget>
+   <addaction name="menuSettings"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="displayOnAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Board display</string>
+   </property>
+  </action>
+  <action name="printOnAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Print to stdout</string>
+   </property>
+  </action>
  </widget>
  <resources>
   <include location="resources.qrc"/>

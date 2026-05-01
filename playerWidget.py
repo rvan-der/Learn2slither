@@ -67,6 +67,7 @@ class PlayerWidget(QWidget):
         self.fpsComboBox.addItem("5", userData=0.2)
         self.fpsComboBox.addItem("10", userData=0.1)
         self.fpsComboBox.addItem("20", userData=0.05)
+        self.fpsComboBox.addItem("50", userData=0.02)
         self.fpsComboBox.currentIndexChanged.connect(self.fps_changed)
         self.fpsLayout.addWidget(self.fpsComboBox)
 

@@ -1,4 +1,5 @@
 import time
+from statistics import median
 from enums import Status as St
 from agent import AgentFactory
 from environment import Environment
@@ -6,7 +7,7 @@ from PySide6.QtCore import (QObject, QRunnable, Signal, Slot)
 
 
 class InterpreterSignals(QObject):
-    progressMade = Signal()
+    progressMade = Signal(int)
     trainingFinished = Signal(int, float, int, int)
     playSessionFinished = Signal(int, list, list, list)
 
@@ -28,6 +29,8 @@ class Interpreter(QRunnable):
         self.filepath = filepath
         self.outfile = outfile
         self.aborted = False
+        self.emitFrequency = 100
+        self.sendProgressNow = False
 
     def set_filepath(self, filepath):
         self.filepath = filepath
@@ -46,11 +49,21 @@ class Interpreter(QRunnable):
     @Slot(bool)
     def set_print_on(self, printOn):
         self.printOn = printOn
+        if not self.displayOn and not printOn:
+            self.emitFrequency = 100
+        else:
+            self.emitFrequency = 1
+            self.sendProgressNow = True
 
     @Slot(bool)
     def set_display_on(self, displayOn):
         self.displayOn = displayOn
-        self.env.displayOn = displayOn
+        self.env.set_display_on(displayOn)
+        if not self.printOn and not displayOn:
+            self.emitFrequency = 100
+        else:
+            self.sendProgressNow = True
+            self.emitFrequency = 1
 
     @Slot()
     def single_step(self):
@@ -156,12 +169,22 @@ class Interpreter(QRunnable):
 
             agent.increment_sessions()
             progress += 1
-            self.sigs.progressMade.emit()
+            if progress % self.emitFrequency == 0 or self.sendProgressNow:
+                self.sigs.progressMade.emit(agent.sessions)
+            self.sendProgressNow = False
 
         if self.printOn:
             print("\n########################################\n")
-            print("Training finished.")
+            print("Training finished !\n")
+            if progress > 0:
+                print(f"""   Sessions: {progress}
+Max rewards: {maxRewards}
+ Max length: {maxLength}
+   Max time: {maxTime}""")
+            else:
+                print("0 sessions completed. No results to show.")
 
+        self.sigs.progressMade.emit(agent.sessions)
         agent.save_to_file(
             self.filepath if self.outfile is None else self.outfile
         )
@@ -228,9 +251,62 @@ class Interpreter(QRunnable):
 
         if self.printOn:
             print("\n########################################\n")
-            print("Play session finished.")
+            print("Play session finished !\n")
+            if progress > 0:
+                print(Interpreter.play_stats_message(
+                    progress, rewards, lengths, times
+                ))
+            else:
+                print("0 games finished. No results to show.")
 
         if not self.aborted:
             self.sigs.playSessionFinished.emit(
                 progress, rewards, lengths, times
             )
+
+    @staticmethod
+    def play_stats_message(progress, rewards, lengths, times):
+        st = Interpreter.play_stats(progress, rewards, lengths, times)
+        sepLine = "--------|" + "-----------|" * 5
+        msg = f"games: {st['games']}\n" + " " * 8
+        msg += f"""|   total   |    min    |    max    |   mean    \
+|  median   |
+{sepLine}
+rewards |     /     | {st['minimum']['reward']:<10}| \
+{st['maximum']['reward']:<10}| {st['mean']['reward']:<10}| \
+{st['median']['reward']:<10}|
+{sepLine}
+lengths | {st['total']['length']:<10}| {st['minimum']['length']:<10}| \
+{st['maximum']['length']:<10}| {st['mean']['length']:<10}| \
+{st['median']['length']:<10}|
+{sepLine}
+times   | {st['total']['time']:<10}| {st['minimum']['time']:<10}| \
+{st['maximum']['time']:<10}| {st['mean']['time']:<10}| \
+{st['median']['time']:<10}|"""
+        return msg
+
+    @staticmethod
+    def play_stats(progress, rewards, lengths, times):
+        stats = {}
+        stats['games'] = progress
+        stats['total'] = {}
+        stats['minimum'] = {}
+        stats['maximum'] = {}
+        stats['mean'] = {}
+        stats['median'] = {}
+        stats['total']['reward'] = round(sum(rewards), 2)
+        stats['total']['length'] = sum(lengths)
+        stats['total']['time'] = sum(times)
+        stats['minimum']['reward'] = round(min(rewards), 2)
+        stats['minimum']['length'] = min(lengths)
+        stats['minimum']['time'] = min(times)
+        stats['maximum']['reward'] = round(max(rewards), 2)
+        stats['maximum']['length'] = max(lengths)
+        stats['maximum']['time'] = max(times)
+        stats['median']['reward'] = round(median(rewards), 2)
+        stats['median']['length'] = round(median(lengths), 2)
+        stats['median']['time'] = round(median(times), 2)
+        stats['mean']['reward'] = round(stats['total']['reward'] / progress, 2)
+        stats['mean']['length'] = round(stats['total']['length'] / progress, 2)
+        stats['mean']['time'] = round(stats['total']['time'] / progress, 2)
+        return stats

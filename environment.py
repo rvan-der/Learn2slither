@@ -117,7 +117,7 @@ class Environment(QObject):
         super().__init__(parent)
         self.displayOn = displayOn
         self.initial_len = initial_len
-        self.board = []
+        self.board = None
         self.snake = None
         self.status = None
 
@@ -127,6 +127,13 @@ class Environment(QObject):
     def is_oob(self, position):  # oob = out of bounds
         x, y = position
         return y < 1 or y > 10 or x < 1 or x > 10
+    
+    def set_display_on(self, displayOn):
+        self.displayOn = displayOn
+        if displayOn is True and self.board is not None:
+            for y in range(12):
+                for x in range(12):
+                    self.cellUpdate.emit(x, y, self.board[y][x])
 
     def move_coords(self, position, direction):
         x, y = position

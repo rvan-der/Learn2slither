@@ -9,6 +9,8 @@ class AgentsToolBox(QToolBox):
 
     trainAgentSignal = Signal(str, int)
     playAgentSignal = Signal(str, int)
+    copyAgentSignal = Signal(str, str)
+    deleteAgentSignal = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -21,7 +23,7 @@ class AgentsToolBox(QToolBox):
 
         self.files = []
 
-    def addAgent(self, filepath):
+    def add_agent(self, filepath):
         if filepath in self.files:
             print(f"[WARNING] file '{filepath}' already loaded, " +
                   "nothing was done.")
@@ -34,7 +36,6 @@ class AgentsToolBox(QToolBox):
             print(f"[ERROR] file '{filepath}':\n{e}")
             print(f"[WARNING]: file '{filepath}' hasn't been added.")
             return
-        print("[SUCCESS]")
         pixmap = QPixmap(100, 100)
         pixmap.fill(QColor(*agentInfo['color']))
         widget = AgentsToolBoxWidget(filepath, agentInfo, self)

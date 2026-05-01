@@ -8,18 +8,21 @@ class QTable:
 
     def __init__(self):
         self.table = {}
-        self.rewards = {
-            St.ALIVE: 0,
-            St.DEAD: -5,
-            St.GREEN: 2,
-            St.RED: -2
+        self.tileRewards = {
+            Tl.WALL: 0,
+            Tl.BODY: -5,
+            Tl.GREEN: 2,
+            Tl.RED: -2
         }
 
     def set_table(self, table):
         self.table = table
 
     def set_rewards(self, rewards):
-        self.rewards = rewards
+        self.tileRewards[Tl.WALL] = rewards[St.ALIVE]
+        self.tileRewards[Tl.BODY] = rewards[St.DEAD]
+        self.tileRewards[Tl.GREEN] = rewards[St.GREEN]
+        self.tileRewards[Tl.RED] = rewards[St.RED]
 
     def get_state_values(self, state):
         qvalues = self.table.get(state.key, None)
@@ -59,4 +62,10 @@ class QTable:
         return random.choice(list(Dr))
 
     def init_state(self, state):
-        self.table[state.key] = [0] * 4
+        actions = [0] * 4
+        for d in list(Dr):
+            actions[d] = self.tileRewards[state.view[d]] / 3 ** state.space[d]
+            if state.view[d] == Tl.WALL and state.space[d] == 0:
+                actions[d] = self.tileRewards[Tl.BODY]
+        self.table[state.key] = actions
+
