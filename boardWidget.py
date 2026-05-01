@@ -64,6 +64,7 @@ class BoardWidget(QWidget):
         for cell in self.cells:
             cell.set_color(self.colors['idle'])
 
+    @Slot(list)
     def set_agent_color(self, color):
         self.colors[Tl.HEAD] = QColor(*[c * 0.7 for c in color])
         self.colors[Tl.BODY] = QColor(*color)

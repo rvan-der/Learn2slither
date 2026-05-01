@@ -56,14 +56,15 @@ class SubtitleLine(QWidget):
 
 class MessagePopup(QDialog):
     def __init__(self, text, color=None, parent=None):
-        super().__init__(parent=parent, f=Qt.Popup)
-        print("hello popup")
+        super().__init__(parent=parent)
         self.setAttribute(Qt.WA_StyledBackground, True)
         style = """QDialog{background-color: rgb(40, 48, 56);
 border: 2px ridge grey}"""
         if color is not None:
             style += "\nQLabel {color: " + color + "}"
         self.setStyleSheet(style)
+
+        self.setWindowTitle(" ")
 
         layout = QGridLayout()
 

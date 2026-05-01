@@ -20,12 +20,12 @@ class AgentFactory:
             cls.instance = super(AgentFactory, cls).__new__(cls)
         return cls.instance
 
-    def new(self, td_n=1, epsilon=0.5, alpha=0.1, gamma=0.9, rewards=None,
+    def new(self, td_n=2, epsilon=0.5, alpha=0.1, gamma=0.9, rewards=None,
             name=None, color=None, filepath=None):
         agent = Agent()
         agent.set_learning_params(td_n, epsilon, alpha, gamma)
         if rewards is not None:
-            agent.set_rewards(rewards)
+            agent.set_reward_struct(rewards)
         agent.set_name(self.random_name() if name is None else name)
         agent.set_color(self.random_color() if color is None else color)
         agent.save_to_file(filepath)
@@ -47,9 +47,9 @@ class AgentFactory:
 
     def agent_from_data(self, data):
         agent = Agent()
-        agent.rewards.set_target_len(data['target_len'])
-        agent.rewards.set_penalty(data['penalty'])
-        agent.rewards.set_rewards(
+        agent.rewardStruct.set_target_len(data['target_len'])
+        agent.rewardStruct.set_penalty(data['penalty'])
+        agent.rewardStruct.set_rewards(
             data['alive'],
             data['dead'],
             data['green'],
@@ -62,6 +62,7 @@ class AgentFactory:
             data['gamma']
         )
         agent.qtable.set_table(data['qtable'])
+        agent.qtable.set_rewards(agent.rewardStruct.rewards)
         agent.set_name(data['name'])
         agent.set_color(data['color'])
         agent.sessions = data['sessions']
@@ -91,13 +92,13 @@ class AgentFactory:
 
     @staticmethod
     def random_name():
-        vowels = 'aaaaeeeeiiiioooouuy'
+        vowels = 'aaaaeeeeiiiiiioooouuy'
         consonants = 'bbccddfffgghhhjkllmmnnppqrrsssssstvwxzzzz'
         parity = random.randint(0, 1)
-        _len = random.randint(3, 5)
+        length = random.randint(3, 5)
 
         name = ""
-        for i in range(_len):
+        for i in range(length):
             if i % 2 == parity:
                 name += random.choice(list(consonants))
                 if random.random() < 0.05:
@@ -187,11 +188,11 @@ class AgentFactory:
         if not isinstance(data['qtable'], dict):
             raise ValueError("Wrong data type for qtable.")
         for state, actions in data['qtable'].items():
-            if not isinstance(state, str) or len(state) != 24:
+            if not isinstance(state, str):
                 raise ValueError(
                     "Wrong data type for state key inside qtable."
                 )
-            if not all(c in "0WHSRG" for c in state):
+            if len(state) > 5 or not all(c in "0123456789" for c in state):
                 raise ValueError("Wrong state key format inside qtable.")
             if not isinstance(actions, list) or len(actions) != 4:
                 raise ValueError("Wrong data type for actions inside qtable.")
@@ -213,7 +214,7 @@ class Agent():
         self.alpha = 0.1
         self.gamma = 0.9
         self.qtable = QTable()
-        self.rewards = RewardStructure()
+        self.rewardStruct = RewardStructure()
         self.name = "Noname"
         self.sessions = 0
         self.color = [0, 0, 0]
@@ -224,8 +225,9 @@ class Agent():
         self.alpha = alpha
         self.gamma = gamma
 
-    def set_rewards(self, rewards):
-        self.rewards = rewards
+    def set_reward_struct(self, rewardStruct):
+        self.rewardStruct = rewardStruct
+        self.qtable.set_rewards(rewardStruct.rewards)
 
     def set_name(self, name):
         self.name = name
@@ -249,12 +251,12 @@ class Agent():
             'alpha': self.alpha,
             'epsilon': self.epsilon,
             'gamma': self.gamma,
-            'alive': self.rewards.rewards[St.ALIVE],
-            'dead': self.rewards.rewards[St.DEAD],
-            'green': self.rewards.rewards[St.GREEN],
-            'red': self.rewards.rewards[St.RED],
-            'target_len': self.rewards.target_len,
-            'penalty': self.rewards.penalty,
+            'alive': self.rewardStruct.rewards[St.ALIVE],
+            'dead': self.rewardStruct.rewards[St.DEAD],
+            'green': self.rewardStruct.rewards[St.GREEN],
+            'red': self.rewardStruct.rewards[St.RED],
+            'target_len': self.rewardStruct.target_len,
+            'penalty': self.rewardStruct.penalty,
             'sessions': self.sessions
         }
 

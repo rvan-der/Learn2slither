@@ -12,11 +12,9 @@ class InterpreterSignals(QObject):
 
 
 class Interpreter(QRunnable):
-
-    sigs = InterpreterSignals()
-
-    def __init__(self, filepath, sessions, train):
+    def __init__(self, filepath, sessions, train, outfile=None):
         super().__init__()
+        self.sigs = InterpreterSignals()
         self.env = Environment(displayOn=False)
         self.factory = AgentFactory()
         self.displayOn = False
@@ -28,6 +26,7 @@ class Interpreter(QRunnable):
         self.train = train
         self.sessions = sessions
         self.filepath = filepath
+        self.outfile = outfile
         self.aborted = False
 
     def set_filepath(self, filepath):
@@ -50,6 +49,7 @@ class Interpreter(QRunnable):
 
     @Slot(bool)
     def set_display_on(self, displayOn):
+        self.displayOn = displayOn
         self.env.displayOn = displayOn
 
     @Slot()
@@ -85,7 +85,7 @@ class Interpreter(QRunnable):
 
             self.env.new_game()
 
-            if self.delay > 0:
+            if self.displayOn:
                 time.sleep(self.delay)
 
             if self.printOn:
@@ -105,14 +105,14 @@ class Interpreter(QRunnable):
                 state = self.env.get_state()
                 action = agent.choose_action(state)
                 self.env.move_snake(action)
-                reward = self.env.get_reward(agent.rewards)
+                reward = self.env.get_reward(agent.rewardStruct)
                 episode.append({'state': state,
                                 'action': action,
                                 'reward': reward})
                 if self.printOn:
                     print(f"\n{state}")
                     print(f"{str(action)}")
-                if self.delay > 0:
+                if self.displayOn:
                     time.sleep(self.delay)
 
             if self.canceled:
@@ -158,14 +158,13 @@ class Interpreter(QRunnable):
             progress += 1
             self.sigs.progressMade.emit()
 
-            if self.delay > 0 and e < self.sessions - 1:
-                time.sleep(self.delay * 2)
-
         if self.printOn:
             print("\n########################################\n")
             print("Training finished.")
 
-        agent.save_to_file(self.filepath)
+        agent.save_to_file(
+            self.filepath if self.outfile is None else self.outfile
+        )
         if not self.aborted:
             if maxRewards == float('-inf'):
                 maxRewards = 0
@@ -192,7 +191,7 @@ class Interpreter(QRunnable):
                     print("Starting play session.\n")
                 print(f"Game {e + 1}/{self.sessions}\n")
 
-            if self.delay > 0:
+            if self.displayOn:
                 time.sleep(self.delay)
 
             total_reward = 0
@@ -207,12 +206,12 @@ class Interpreter(QRunnable):
                 state = self.env.get_state()
                 action = agent.choose_action(state, training=False)
                 self.env.move_snake(action)
-                total_reward += self.env.get_reward(agent.rewards)
+                total_reward += self.env.get_reward(agent.rewardStruct)
                 time_alive += 1
                 if self.printOn:
                     print(f"\n{state}")
                     print(f"{str(action)}")
-                if self.delay > 0:
+                if self.displayOn:
                     time.sleep(self.delay)
             if self.canceled:
                 break

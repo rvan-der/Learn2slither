@@ -1,5 +1,6 @@
 <RCC>
   <qresource>
+    <file>assets/floppydisk_icon.png</file>
     <file>assets/reset_icon.png</file>
     <file>assets/dice_icon.png</file>
     <file>assets/import_icon.png</file>

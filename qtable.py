@@ -1,20 +1,25 @@
 import random
 from enums import Direction as Dr
 from enums import Tile as Tl
+from enums import Status as St
 
 
 class QTable:
 
-    tileValues = {
-            Tl.WALL: -5,
-            Tl.EMPTY: 0,
-            Tl.BODY: -5,
-            Tl.GREEN: 1,
-            Tl.RED: -1
-            }
-
     def __init__(self):
         self.table = {}
+        self.rewards = {
+            St.ALIVE: 0,
+            St.DEAD: -5,
+            St.GREEN: 2,
+            St.RED: -2
+        }
+
+    def set_table(self, table):
+        self.table = table
+
+    def set_rewards(self, rewards):
+        self.rewards = rewards
 
     def get_state_values(self, state):
         qvalues = self.table.get(state.key, None)
@@ -37,7 +42,6 @@ class QTable:
         return random.choice([a for a in Dr if qvalues[a] == max_q])
 
     def random_action(self, state):
-        print("\n[RANDOM ACTION]")
         options = list(Dr)
         x, y = state.headX, state.headY
         while len(options) > 0:
@@ -55,15 +59,4 @@ class QTable:
         return random.choice(list(Dr))
 
     def init_state(self, state):
-        # down = state.col[state.headY + 1]
-        # up = state.col[state.headY - 1]
-        # left = state.row[state.headX - 1]
-        # right = state.row[state.headX + 1]
         self.table[state.key] = [0] * 4
-        # self.table[state.key][Dr.DOWN] = self.tileValues[down]
-        # self.table[state.key][Dr.UP] = self.tileValues[up]
-        # self.table[state.key][Dr.LEFT] = self.tileValues[left]
-        # self.table[state.key][Dr.RIGHT] = self.tileValues[right]
-
-    def set_table(self, table):
-        self.table = table

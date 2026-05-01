@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QDialogButtonBox,
 from PySide6.QtGui import (QIcon, QValidator, QColor)
 from PySide6.QtCore import (Signal, Qt, QSize)
 from uiElements import (MessagePopup, ColorDisplay, SubtitleLine)
-from agent import (Agent, AgentFactory)
+from agent import (AgentFactory)
 from rewards import RewardStructure
 import resources_rc  # noqa
 
@@ -27,6 +27,18 @@ class AgentCreationDialog(QDialog):
 
     agentCreated = Signal(str)
     factory = AgentFactory()
+    defaultParams = {
+        'td_n': 2,
+        'alpha': 0.1,
+        'epsilon': 0.5,
+        'gamma': 0.9,
+        'alive': 0,
+        'dead': -5,
+        'green': 2,
+        'red': -2,
+        'target_len': 10,
+        'penalty': -1
+    }
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -89,28 +101,28 @@ QDialog {border: 2px ridge grey}""")
         tdnLabel.setToolTip("Temporal difference degree")
         self.tdnSpinBox = QSpinBox()
         self.tdnSpinBox.setRange(1, 100)
-        self.tdnSpinBox.setValue(1)
+        self.tdnSpinBox.setValue(self.defaultParams['td_n'])
 
         alphaLabel = QLabel("alpha:")
         alphaLabel.setToolTip("Learning rate")
         self.alphaSpinBox = QDoubleSpinBox()
         self.alphaSpinBox.setRange(0, 1)
         self.alphaSpinBox.setSingleStep(0.01)
-        self.alphaSpinBox.setValue(0.2)
+        self.alphaSpinBox.setValue(self.defaultParams['alpha'])
 
         epsilonLabel = QLabel("epsilon:")
         epsilonLabel.setToolTip("Exploration rate")
         self.epsilonSpinBox = QDoubleSpinBox()
         self.epsilonSpinBox.setRange(0, 1)
         self.epsilonSpinBox.setSingleStep(0.01)
-        self.epsilonSpinBox.setValue(0.5)
+        self.epsilonSpinBox.setValue(self.defaultParams['epsilon'])
 
         gammaLabel = QLabel("gamma:")
         gammaLabel.setToolTip("Discount factor")
         self.gammaSpinBox = QDoubleSpinBox()
         self.gammaSpinBox.setRange(0, 1)
         self.gammaSpinBox.setSingleStep(0.01)
-        self.gammaSpinBox.setValue(0.9)
+        self.gammaSpinBox.setValue(self.defaultParams['gamma'])
 
         paramsLayout = QHBoxLayout()
         paramsLayout.setSpacing(5)
@@ -147,7 +159,7 @@ QDialog {border: 2px ridge grey}""")
         self.aliveSpinBox.setRange(-100, 100)
         self.aliveSpinBox.setSingleStep(0.1)
         self.aliveSpinBox.setAccelerated(True)
-        self.aliveSpinBox.setValue(0)
+        self.aliveSpinBox.setValue(self.defaultParams['alive'])
         aliveLayout = QHBoxLayout()
         aliveLayout.setSpacing(5)
         aliveLayout.addWidget(QLabel("alive:"))
@@ -159,7 +171,7 @@ QDialog {border: 2px ridge grey}""")
         self.deadSpinBox.setRange(-100, -0.1)
         self.deadSpinBox.setSingleStep(0.1)
         self.deadSpinBox.setAccelerated(True)
-        self.deadSpinBox.setValue(-5)
+        self.deadSpinBox.setValue(self.defaultParams['dead'])
         deadLayout = QHBoxLayout()
         deadLayout.setSpacing(5)
         deadLayout.addWidget(QLabel("dead:"))
@@ -171,7 +183,7 @@ QDialog {border: 2px ridge grey}""")
         self.greenSpinBox.setRange(0, 100)
         self.greenSpinBox.setSingleStep(0.1)
         self.greenSpinBox.setAccelerated(True)
-        self.greenSpinBox.setValue(2)
+        self.greenSpinBox.setValue(self.defaultParams['green'])
         greenLayout = QHBoxLayout()
         greenLayout.setSpacing(5)
         greenLayout.addWidget(QLabel("green:"))
@@ -183,7 +195,7 @@ QDialog {border: 2px ridge grey}""")
         self.redSpinBox.setRange(-100, 0)
         self.redSpinBox.setSingleStep(0.1)
         self.redSpinBox.setAccelerated(True)
-        self.redSpinBox.setValue(-2)
+        self.redSpinBox.setValue(self.defaultParams['red'])
         redLayout = QHBoxLayout()
         redLayout.setSpacing(5)
         redLayout.addWidget(QLabel("red:"))
@@ -197,7 +209,7 @@ QDialog {border: 2px ridge grey}""")
 penalty isn't applied anymore.""")
         self.targetLenSpinBox = QSpinBox()
         self.targetLenSpinBox.setRange(1, 100)
-        self.targetLenSpinBox.setValue(10)
+        self.targetLenSpinBox.setValue(self.defaultParams['target_len'])
         targetLenLayout = QHBoxLayout()
         targetLenLayout.setSpacing(5)
         targetLenLayout.addWidget(targetLenLabel)
@@ -211,7 +223,7 @@ penalty isn't applied anymore.""")
 while the snake is under the target length.""")
         self.penaltySpinBox = QSpinBox()
         self.penaltySpinBox.setRange(-100, 0)
-        self.penaltySpinBox.setValue(-1)
+        self.penaltySpinBox.setValue(self.defaultParams['penalty'])
         penaltyLayout = QHBoxLayout()
         penaltyLayout.setSpacing(5)
         penaltyLayout.addWidget(penaltyLabel)
@@ -256,13 +268,21 @@ while the snake is under the target length.""")
         )
         self.fileLineEdit.setReadOnly(True)
 
+        self.selectFileButton = QPushButton()
+        self.selectFileButton.setIcon(QIcon(":/assets/floppydisk_icon.png"))
+        self.selectFileButton.setIconSize(QSize(20, 20))
+        self.selectFileButton.setEnabled(False)
+        self.selectFileButton.setToolTip("Select file")
+
         self.defaultCheckBox = QCheckBox()
         self.defaultCheckBox.setChecked(True)
         self.defaultCheckBox.setText("default")
 
         fileLayout.addWidget(QLabel("save to:"))
         fileLayout.addWidget(self.fileLineEdit)
-        fileLayout.addSpacing(20)
+        fileLayout.addSpacing(5)
+        fileLayout.addWidget(self.selectFileButton)
+        fileLayout.addSpacing(15)
         fileLayout.addWidget(self.defaultCheckBox)
 
         fileWidget = QWidget()
@@ -294,7 +314,10 @@ while the snake is under the target length.""")
         self.GSpinbox.valueChanged.connect(self.change_color)
         self.BSpinbox.valueChanged.connect(self.change_color)
         self.randomButton.clicked.connect(self.random_personality)
+        self.rewardsResetButton.clicked.connect(self.reset_rewards)
+        self.paramsResetButton.clicked.connect(self.reset_params)
         self.defaultCheckBox.checkStateChanged.connect(self.default_changed)
+        self.selectFileButton.clicked.connect(self.select_file)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
         self.finished.connect(self.deleteLater)
@@ -320,20 +343,42 @@ while the snake is under the target length.""")
         self.change_color()
         self.nameLineEdit.setText(AgentFactory.random_name())
 
+    def reset_params(self):
+        self.tdnSpinBox.setValue(self.defaultParams['td_n'])
+        self.epsilonSpinBox.setValue(self.defaultParams['epsilon'])
+        self.gammaSpinBox.setValue(self.defaultParams['gamma'])
+        self.alphaSpinBox.setValue(self.defaultParams['alpha'])
+
+    def reset_rewards(self):
+        self.aliveSpinBox.setValue(self.defaultParams['alive'])
+        self.deadSpinBox.setValue(self.defaultParams['dead'])
+        self.greenSpinBox.setValue(self.defaultParams['green'])
+        self.redSpinBox.setValue(self.defaultParams['red'])
+        self.targetLenSpinBox.setValue(self.defaultParams['target_len'])
+        self.penaltySpinBox.setValue(self.defaultParams['penalty'])
+
     def default_changed(self, checkState):
         if checkState == Qt.Checked:
             self.fileLineEdit.setText(
                 AgentFactory.default_filepath(self.nameLineEdit.text())
             )
             self.fileLineEdit.setReadOnly(True)
+            self.selectFileButton.setEnabled(False)
         else:
             self.fileLineEdit.setReadOnly(False)
+            self.selectFileButton.setEnabled(True)
 
-    def select_folder(self):
+    def select_file(self):
         dialog = QFileDialog(self)
         dialog.setDefaultSuffix("l2s")
         dialog.setNameFilter("*.l2s")
+        dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
+        dialog.fileSelected.connect(self.file_selected)
         dialog.open()
+
+    def file_selected(self, file):
+        if len(file) > 0:
+            self.fileLineEdit.setText(file)
 
     def accept(self):
         name = self.nameLineEdit.text()

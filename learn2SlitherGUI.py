@@ -69,6 +69,7 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
         self.agentsToolBox = AgentsToolBox()
         self.agentsScrollArea.setWidget(self.agentsToolBox)
 
+        self.agentsToolBox.currentChanged.connect(self.set_agent_color)
         self.agentsToolBox.trainAgentSignal.connect(self.train_agent)
         self.agentsToolBox.playAgentSignal.connect(self.play_agent)
         self.createAgentButton.clicked.connect(self.create_agent)
@@ -79,15 +80,17 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
         self.populate()
         print("\nWelcome !")
 
+    @Slot(int)
+    def set_agent_color(self, index):
+        self.boardWidget.set_agent_color(
+            self.agentsToolBox.widget(index).agentInfo['color']
+        )
+
     @Slot(bool)
     def change_display_on(self, displayOn):
         self.displayOn = displayOn
         if displayOn is False:
             self.boardWidget.clear_display()
-        self.boardFrame.setEnabled(displayOn)
-        if displayOn is True and self.interpreter is not None \
-                and self.interpreter.isRunning():
-            self.playerWidget.setEnabled(True)
         self.displayOnChanged.emit(displayOn)
 
     @Slot(bool)
@@ -128,10 +131,10 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
         title = "Training finished !\n\n"
         msg = "0 sessions completed. No results to show."
         if progress > 0:
-            msg = f"""Games: {progress}
-   Max rewards: {maxRwds}
-    Max length: {maxLen}
-      Max time: {maxTime}"""
+            msg = f"""   Sessions: {progress}
+Max rewards: {maxRwds}
+ Max length: {maxLen}
+   Max time: {maxTime}"""
         self.close_session(title + msg)
 
     @Slot(int, list, list, list)
@@ -182,18 +185,22 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
 
     def play_stats_message(self, progress, rewards, lengths, times):
         st = self.play_stats(progress, rewards, lengths, times)
-        sepLine = "--------|" + "----------|" * 5 + "\n"
+        sepLine = "--------|" + "-----------|" * 5
         msg = f"games: {st['games']}\n" + " " * 8
-        msg += "|  total   |   min    |   max    |   mean   |  median  |\n"
-        msg += sepLine + f"rewards |{st['total']['reward']:>9} |" + \
-        f"{st['minimum']['reward']:>9} |{st['maximum']['reward']:>9} |" + \
-        f"{st['mean']['reward']:>9} |{st['median']['reward']:>9} |\n" + \
-        sepLine + f"lengths |{st['total']['length']:>9} |" + \
-        f"{st['minimum']['length']:>9} |{st['maximum']['length']:>9} |" + \
-        f"{st['mean']['length']:>9} |{st['median']['length']:>9} |\n" + \
-        sepLine + f"times   |{st['total']['time']:>9} |" + \
-        f"{st['minimum']['time']:>9} |{st['maximum']['time']:>9} |" + \
-        f"{st['mean']['time']:>9} |{st['median']['time']:>9} |"
+        msg += f"""|   total   |    min    |    max    |   mean    \
+|  median   |
+{sepLine}
+rewards |     /     | {st['minimum']['reward']:<10}| \
+{st['maximum']['reward']:<10}| {st['mean']['reward']:<10}| \
+{st['median']['reward']:<10}|
+{sepLine}
+lengths | {st['total']['length']:<10}| {st['minimum']['length']:<10}| \
+{st['maximum']['length']:<10}| {st['mean']['length']:<10}| \
+{st['median']['length']:<10}|
+{sepLine}
+times   | {st['total']['time']:<10}| {st['minimum']['time']:<10}| \
+{st['maximum']['time']:<10}| {st['mean']['time']:<10}| \
+{st['median']['time']:<10}|"""
         return msg
 
     def play_stats(self, progress, rewards, lengths, times):
@@ -213,12 +220,12 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
         stats['maximum']['reward'] = max(rewards)
         stats['maximum']['length'] = max(lengths)
         stats['maximum']['time'] = max(times)
-        stats['median']['reward'] = median(rewards)
-        stats['median']['length'] = median(lengths)
-        stats['median']['time'] = median(times)
-        stats['mean']['reward'] = stats['total']['reward'] / progress
-        stats['mean']['length'] = stats['total']['length'] / progress
-        stats['mean']['time'] = stats['total']['time'] / progress
+        stats['median']['reward'] = round(median(rewards), 2)
+        stats['median']['length'] = round(median(lengths), 2)
+        stats['median']['time'] = round(median(times), 2)
+        stats['mean']['reward'] = round(stats['total']['reward'] / progress, 2)
+        stats['mean']['length'] = round(stats['total']['length'] / progress, 2)
+        stats['mean']['time'] = round(stats['total']['time'] / progress, 2)
         return stats
 
     @Slot()

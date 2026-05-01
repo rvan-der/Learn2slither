@@ -74,7 +74,7 @@ class PlayerWidget(QWidget):
                                     alignment=Qt.AlignRight)
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setStyleSheet("background-color: rgb(20, 24, 28);")
+        self.setStyleSheet("background-color: rgb(18, 22, 25);")
 
     @Slot(int)
     def fps_changed(self, index):

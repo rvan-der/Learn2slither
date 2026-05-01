@@ -3,7 +3,7 @@ from enums import Status as St
 
 class RewardStructure:
 
-    def __init__(self, alive=0.5, dead=-10, green=2, red=-2,
+    def __init__(self, alive=0, dead=-5, green=2, red=-2,
                  target_len=10, penalty=-1):
         self.target_len = target_len
         self.penalty = penalty

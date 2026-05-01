@@ -10,7 +10,7 @@ from PySide6.QtCore import (Qt, Slot)
 
 class ModelInfoPopup(QDialog):
     def __init__(self, agent, parent=None):
-        super().__init__(parent=parent, f=Qt.Popup)
+        super().__init__(parent=parent)
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.setStyleSheet("""QDialog{background-color: rgb(40, 48, 56);
 border: 2px ridge grey}""")
@@ -222,13 +222,17 @@ class AgentsToolBoxWidget(QWidget):
     @Slot()
     def trainAgent(self):
         self.toolBox.trainAgentSignal.emit(
-            self.filepath, self.episodesSpinBox.value()
+            self.filepath,
+            self.episodesSpinBox.value()
         )
+
     @Slot()
     def playAgent(self):
         self.toolBox.playAgentSignal.emit(
-            self.filepath, self.gamesSpinBox.value()
+            self.filepath,
+            self.episodesSpinBox.value()
         )
+
     @Slot()
     def model_info(self):
         popup = ModelInfoPopup(self.agent, parent=self)
