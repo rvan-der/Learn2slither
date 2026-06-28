@@ -156,7 +156,7 @@ class Interpreter(QRunnable):
                 q_old = agent.qtable.get_qvalue(s, a)
                 td_target = r
                 i = 1
-                while i < agent.td_n + 1 and k + i < len(episode):
+                while i < agent.td_n + 1 and k + i < len(episode) - 1:
                     td_target += (agent.gamma ** i) * episode[k + i]['reward']
                     i += 1
                 if k + i < len(episode):

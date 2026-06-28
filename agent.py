@@ -1,7 +1,9 @@
 import random
 import json
 import os
+import math
 from qtable import QTable
+from enums import Direction as Dr
 from enums import Status as St
 from rewards import RewardStructure
 
@@ -153,7 +155,7 @@ class AgentFactory:
 
         if not isinstance(data['alive'], float) \
                 and not isinstance(data['alive'], int) \
-                or data['alive'] < 0 or data['alive'] > 100:
+                or data['alive'] < -100 or data['alive'] > 100:
             raise ValueError("Wrong value for alive reward.")
 
         if not isinstance(data['dead'], float) \
@@ -210,7 +212,7 @@ class Agent():
         # epsilon: exploration rate
         # alpha: learning rate
         # gamma: discount factor
-        self.td_n = 1
+        self.td_n = 0
         self.epsilon = 0.5
         self.alpha = 0.1
         self.gamma = 0.9
@@ -228,7 +230,6 @@ class Agent():
 
     def set_reward_struct(self, rewardStruct):
         self.rewardStruct = rewardStruct
-        self.qtable.set_rewards(rewardStruct.rewards)
 
     def set_name(self, name):
         self.name = name
@@ -240,9 +241,24 @@ class Agent():
         self.sessions += 1
 
     def choose_action(self, state, training=True):
-        if training and random.random() < self.epsilon:
-            return self.qtable.random_action(state)
-        return self.qtable.best_action(state)
+        if training:
+            return self.softmax_action(state)
+        return self.best_action(state)
+
+    def best_action(self, state):
+        qValues = self.qtable.get_state_values(state)
+        max_q = max(qValues)
+        return random.choice([a for a in Dr if qValues[a] == max_q])
+
+    def softmax_action(self, state):
+        qValues = self.qtable.get_state_values(state)
+        base = 0.1
+        expQValues = [math.exp(q * base) for q in qValues]
+        probs = [eq / sum(expQValues) for eq in expQValues]
+        return random.choices(list(Dr), weights=probs)[0]
+
+    def random_action(self):
+        return random.choice(list(Dr))
 
     def get_info(self):
         return {

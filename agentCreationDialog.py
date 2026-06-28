@@ -28,7 +28,7 @@ class AgentCreationDialog(QDialog):
     agentCreated = Signal(str)
     factory = AgentFactory()
     defaultParams = {
-        'td_n': 2,
+        'td_n': 0,
         'alpha': 0.1,
         'epsilon': 0.5,
         'gamma': 0.9,
@@ -100,7 +100,7 @@ QDialog {border: 2px ridge grey}""")
         tdnLabel = QLabel("td_N:")
         tdnLabel.setToolTip("Temporal difference degree")
         self.tdnSpinBox = QSpinBox()
-        self.tdnSpinBox.setRange(1, 100)
+        self.tdnSpinBox.setRange(0, 100)
         self.tdnSpinBox.setValue(self.defaultParams['td_n'])
 
         alphaLabel = QLabel("alpha:")

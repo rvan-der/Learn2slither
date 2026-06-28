@@ -16,13 +16,19 @@ class State:
         self.headX = row.find(Tl.HEAD)
         self.headY = col.find(Tl.HEAD)
         # a scaled value of the space between the head and the view
-        self.space = {}
+        # self.space = {}
         # the first non empty tile ahead in each direction
         self.view = {
             Dr.LEFT: self.left_view(),
             Dr.RIGHT: self.right_view(),
             Dr.UP: self.up_view(),
             Dr.DOWN: self.down_view()
+        }
+        self.neighbors = {
+            Dr.LEFT: self.row[self.headX - 1],
+            Dr.RIGHT: self.row[self.headX + 1],
+            Dr.UP: self.col[self.headY - 1],
+            Dr.DOWN: self.col[self.headY + 1]
         }
         self.key = self.encode()
 
@@ -36,8 +42,9 @@ class State:
     # the models' file.
     # key code:
     # viewL | viewR | viewU | viewD | spaceL | spaceR | spaceU | spaceD
-    # Every field is 2 bits wide (4 possible values).
-    # total: 8 * 2 = 16 bits (65535 or 5 chars at most)
+    # Every view field is 2 bits wide (4 possible values).
+    # Every space field is 1 bits wide (2 possible values).
+    # total: 4 * 2 + 4 * 1 = 12 bits (4095 or 4 chars at most)
     def encode(self):
         viewCodes = {
             Tl.WALL: 0,
@@ -45,51 +52,51 @@ class State:
             Tl.RED: 2,
             Tl.GREEN: 3
         }
-        key = viewCodes[self.view[Dr.LEFT]] << 14
-        key |= viewCodes[self.view[Dr.RIGHT]] << 12
-        key |= viewCodes[self.view[Dr.UP]] << 10
-        key |= viewCodes[self.view[Dr.DOWN]] << 8
-        key |= self.space[Dr.LEFT] << 6
-        key |= self.space[Dr.RIGHT] << 4
-        key |= self.space[Dr.UP] << 2
-        key |= self.space[Dr.DOWN]
+        key = viewCodes[self.view[Dr.LEFT]] << 10
+        key |= viewCodes[self.view[Dr.RIGHT]] << 8
+        key |= viewCodes[self.view[Dr.UP]] << 6
+        key |= viewCodes[self.view[Dr.DOWN]] << 4
+        key |= int(self.neighbors[Dr.LEFT] == Tl.EMPTY) << 3
+        key |= int(self.neighbors[Dr.RIGHT] == Tl.EMPTY) << 2
+        key |= int(self.neighbors[Dr.UP] == Tl.EMPTY) << 1
+        key |= int(self.neighbors[Dr.DOWN] == Tl.EMPTY)
         return str(key)
 
-    def space_scaler(self, space):
-        if space == 0:
-            return 0
-        if space < 4:
-            return 1
-        if space < 7:
-            return 2
-        return 3
+    # def space_scaler(self, space):
+    #     if space == 0:
+    #         return 0
+    #     if space < 4:
+    #         return 1
+    #     if space < 7:
+    #         return 2
+    #     return 3
 
     def left_view(self):
         i = 1
         while self.row[self.headX - i] == Tl.EMPTY:
             i += 1
-        self.space[Dr.LEFT] = self.space_scaler(i - 1)
+        # self.space[Dr.LEFT] = self.space_scaler(i - 1)
         return self.row[self.headX - i]
-    
+
     def right_view(self):
         i = 1
         while self.row[self.headX + i] == Tl.EMPTY:
             i += 1
-        self.space[Dr.RIGHT] = self.space_scaler(i - 1)
+        # self.space[Dr.RIGHT] = self.space_scaler(i - 1)
         return self.row[self.headX + i]
 
     def up_view(self):
         i = 1
         while self.col[self.headY - i] == Tl.EMPTY:
             i += 1
-        self.space[Dr.UP] = self.space_scaler(i - 1)
+        # self.space[Dr.UP] = self.space_scaler(i - 1)
         return self.col[self.headY - i]
-    
+
     def down_view(self):
         i = 1
         while self.col[self.headY + i] == Tl.EMPTY:
             i += 1
-        self.space[Dr.DOWN] = self.space_scaler(i - 1)
+        # self.space[Dr.DOWN] = self.space_scaler(i - 1)
         return self.col[self.headY + i]
 
     def __str__(self):

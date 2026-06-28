@@ -25,14 +25,14 @@ class RewardStructure:
         self.validate()
 
     def validate(self):
-        err_msg = """Reward structure must follow these constraints:
-   0 <= alive <= 100
+        err_msg = """Reward structure must follow these constraints
+-100 <= alive <= 100
 -100 <= dead  <  0
    0 <  green <= 100
 -100 <= red   <  0
    0 <= target length <= 100
 -100 <= penalty       <= 0"""
-        if self.rewards['alive'] < 0 or self.rewards['alive'] > 100:
+        if self.rewards['alive'] < -100 or self.rewards['alive'] > 100:
             raise ValueError(err_msg)
         if self.rewards['dead'] < -100 or self.rewards['dead'] >= 0:
             raise ValueError(err_msg)
