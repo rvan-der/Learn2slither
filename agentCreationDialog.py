@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QDialogButtonBox,
                                QLabel, QLineEdit, QSpinBox, QWidget,
                                QHBoxLayout, QDoubleSpinBox, QSizePolicy,
-                               QGridLayout, QPushButton, QCheckBox,
-                               QSpacerItem, QFileDialog)
+                               QPushButton, QCheckBox, QSpacerItem,
+                               QFileDialog)
 from PySide6.QtGui import (QIcon, QValidator, QColor)
 from PySide6.QtCore import (Signal, Qt, QSize)
 from uiElements import (MessagePopup, ColorDisplay, SubtitleLine)
@@ -30,14 +30,13 @@ class AgentCreationDialog(QDialog):
     defaultParams = {
         'td_n': 0,
         'alpha': 0.1,
-        'epsilon': 0.5,
         'gamma': 0.9,
+        'kappa': 0.01,
+        'epsilon': 0.001,
         'alive': 0,
         'dead': -5,
         'green': 2,
-        'red': -2,
-        'target_len': 10,
-        'penalty': -1
+        'red': -2
     }
 
     def __init__(self, parent=None):
@@ -106,23 +105,32 @@ QDialog {border: 2px ridge grey}""")
         alphaLabel = QLabel("alpha:")
         alphaLabel.setToolTip("Learning rate")
         self.alphaSpinBox = QDoubleSpinBox()
-        self.alphaSpinBox.setRange(0, 1)
+        self.alphaSpinBox.setRange(0.01, 1)
         self.alphaSpinBox.setSingleStep(0.01)
         self.alphaSpinBox.setValue(self.defaultParams['alpha'])
-
-        epsilonLabel = QLabel("epsilon:")
-        epsilonLabel.setToolTip("Exploration rate")
-        self.epsilonSpinBox = QDoubleSpinBox()
-        self.epsilonSpinBox.setRange(0, 1)
-        self.epsilonSpinBox.setSingleStep(0.01)
-        self.epsilonSpinBox.setValue(self.defaultParams['epsilon'])
 
         gammaLabel = QLabel("gamma:")
         gammaLabel.setToolTip("Discount factor")
         self.gammaSpinBox = QDoubleSpinBox()
-        self.gammaSpinBox.setRange(0, 1)
+        self.gammaSpinBox.setRange(0.01, 1)
         self.gammaSpinBox.setSingleStep(0.01)
         self.gammaSpinBox.setValue(self.defaultParams['gamma'])
+
+        kappaLabel = QLabel("kappa:")
+        kappaLabel.setToolTip("Temperature factor")
+        self.kappaSpinBox = QDoubleSpinBox()
+        self.kappaSpinBox.setDecimals(3)
+        self.kappaSpinBox.setRange(0.001, 1)
+        self.kappaSpinBox.setSingleStep(0.001)
+        self.kappaSpinBox.setValue(self.defaultParams['kappa'])
+
+        epsilonLabel = QLabel("epsilon:")
+        epsilonLabel.setToolTip("Baseline exploration rate")
+        self.epsilonSpinBox = QDoubleSpinBox()
+        self.epsilonSpinBox.setDecimals(4)
+        self.epsilonSpinBox.setRange(0, 1)
+        self.epsilonSpinBox.setSingleStep(0.0001)
+        self.epsilonSpinBox.setValue(self.defaultParams['epsilon'])
 
         paramsLayout = QHBoxLayout()
         paramsLayout.setSpacing(5)
@@ -138,11 +146,14 @@ QDialog {border: 2px ridge grey}""")
         paramsLayout.addWidget(alphaLabel)
         paramsLayout.addWidget(self.alphaSpinBox)
         paramsLayout.addSpacing(20)
-        paramsLayout.addWidget(epsilonLabel)
-        paramsLayout.addWidget(self.epsilonSpinBox)
-        paramsLayout.addSpacing(20)
         paramsLayout.addWidget(gammaLabel)
         paramsLayout.addWidget(self.gammaSpinBox)
+        paramsLayout.addSpacing(20)
+        paramsLayout.addWidget(kappaLabel)
+        paramsLayout.addWidget(self.kappaSpinBox)
+        paramsLayout.addSpacing(20)
+        paramsLayout.addWidget(epsilonLabel)
+        paramsLayout.addWidget(self.epsilonSpinBox)
         paramsLayout.addSpacerItem(QSpacerItem(
             0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum
         ))
@@ -203,56 +214,22 @@ QDialog {border: 2px ridge grey}""")
         redWidget = QWidget()
         redWidget.setLayout(redLayout)
 
-        targetLenLabel = QLabel("target length:")
-        targetLenLabel.setToolTip(
-            """The snake's length after which the
-penalty isn't applied anymore.""")
-        self.targetLenSpinBox = QSpinBox()
-        self.targetLenSpinBox.setRange(1, 100)
-        self.targetLenSpinBox.setValue(self.defaultParams['target_len'])
-        targetLenLayout = QHBoxLayout()
-        targetLenLayout.setSpacing(5)
-        targetLenLayout.addWidget(targetLenLabel)
-        targetLenLayout.addWidget(self.targetLenSpinBox)
-        targetLenWidget = QWidget()
-        targetLenWidget.setLayout(targetLenLayout)
-
-        penaltyLabel = QLabel("      penalty:")
-        penaltyLabel.setToolTip(
-            """This penalty is applied to all scores except for green
-while the snake is under the target length.""")
-        self.penaltySpinBox = QDoubleSpinBox()
-        self.penaltySpinBox.setRange(-100, 0)
-        self.penaltySpinBox.setSingleStep(0.1)
-        self.penaltySpinBox.setAccelerated(True)
-        self.penaltySpinBox.setValue(self.defaultParams['penalty'])
-        penaltyLayout = QHBoxLayout()
-        penaltyLayout.setSpacing(5)
-        penaltyLayout.addWidget(penaltyLabel)
-        penaltyLayout.addWidget(self.penaltySpinBox)
-        penaltyWidget = QWidget()
-        penaltyWidget.setLayout(penaltyLayout)
-
-        rewardsLayout = QGridLayout()
+        rewardsLayout = QHBoxLayout()
         rewardsLayout.setContentsMargins(20, 0, 20, 0)
         rewardsLayout.addWidget(
-            self.rewardsResetButton, 0, 0, alignment=Qt.AlignLeft
+            self.rewardsResetButton, alignment=Qt.AlignLeft
         )
-        rewardsLayout.addItem(
+        rewardsLayout.addSpacerItem(
             QSpacerItem(
                 20, 0, QSizePolicy.MinimumExpanding, QSizePolicy.Minimum
-            ),
-            0, 1
+            )
         )
-        rewardsLayout.addWidget(aliveWidget, 0, 2, alignment=Qt.AlignRight)
-        rewardsLayout.addWidget(greenWidget, 0, 3, alignment=Qt.AlignRight)
-        rewardsLayout.addWidget(targetLenWidget, 0, 4, alignment=Qt.AlignRight)
-        rewardsLayout.addWidget(deadWidget, 1, 2, alignment=Qt.AlignRight)
-        rewardsLayout.addWidget(redWidget, 1, 3, alignment=Qt.AlignRight)
-        rewardsLayout.addWidget(penaltyWidget, 1, 4, alignment=Qt.AlignRight)
-        rewardsLayout.addItem(
-            QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum),
-            0, 5
+        rewardsLayout.addWidget(aliveWidget, alignment=Qt.AlignRight)
+        rewardsLayout.addWidget(greenWidget, alignment=Qt.AlignRight)
+        rewardsLayout.addWidget(deadWidget, alignment=Qt.AlignRight)
+        rewardsLayout.addWidget(redWidget, alignment=Qt.AlignRight)
+        rewardsLayout.addSpacerItem(
+            QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
         )
 
         rewardsWidget = QWidget()
@@ -347,17 +324,16 @@ while the snake is under the target length.""")
 
     def reset_params(self):
         self.tdnSpinBox.setValue(self.defaultParams['td_n'])
-        self.epsilonSpinBox.setValue(self.defaultParams['epsilon'])
         self.gammaSpinBox.setValue(self.defaultParams['gamma'])
         self.alphaSpinBox.setValue(self.defaultParams['alpha'])
+        self.kappaSpinBox.setValue(self.defaultParams['kappa'])
+        self.epsilonSpinBox.setValue(self.defaultParams['epsilon'])
 
     def reset_rewards(self):
         self.aliveSpinBox.setValue(self.defaultParams['alive'])
         self.deadSpinBox.setValue(self.defaultParams['dead'])
         self.greenSpinBox.setValue(self.defaultParams['green'])
         self.redSpinBox.setValue(self.defaultParams['red'])
-        self.targetLenSpinBox.setValue(self.defaultParams['target_len'])
-        self.penaltySpinBox.setValue(self.defaultParams['penalty'])
 
     def default_changed(self, checkState):
         if checkState == Qt.Checked:
@@ -401,9 +377,10 @@ non alphanumeric characters.",
             self.BSpinbox.value()
         )
         td_n = self.tdnSpinBox.value()
-        epsilon = self.epsilonSpinBox.value()
         alpha = self.alphaSpinBox.value()
         gamma = self.gammaSpinBox.value()
+        kappa = self.kappaSpinBox.value()
+        epsilon = self.epsilonSpinBox.value()
         rewards = RewardStructure()
         rewards.set_rewards(
             self.aliveSpinBox.value(),
@@ -411,14 +388,12 @@ non alphanumeric characters.",
             self.greenSpinBox.value(),
             self.redSpinBox.value()
         )
-        rewards.set_target_len(self.targetLenSpinBox.value())
-        rewards.set_penalty(self.penaltySpinBox.value())
         filepath = self.fileLineEdit.text()
 
         agent = None
         try:
-            agent = self.factory.new(td_n, epsilon, alpha, gamma, rewards,
-                                     name, color, filepath)
+            agent = self.factory.new(td_n, alpha, gamma, kappa, epsilon,
+                                     rewards, name, color, filepath)
         except Exception as e:
             MessagePopup(
                 f"Couldn't create the agent:\n{e}",

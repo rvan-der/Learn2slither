@@ -1,3 +1,5 @@
+import os
+from uiElements import MessagePopup
 from agent import AgentFactory
 from agentsToolBoxWidget import AgentsToolBoxWidget
 from PySide6.QtWidgets import (QToolBox, QSizePolicy)
@@ -9,8 +11,6 @@ class AgentsToolBox(QToolBox):
 
     trainAgentSignal = Signal(str, int)
     playAgentSignal = Signal(str, int)
-    copyAgentSignal = Signal(str, str)
-    deleteAgentSignal = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -41,3 +41,31 @@ class AgentsToolBox(QToolBox):
         widget = AgentsToolBoxWidget(filepath, agentInfo, self)
         self.addItem(widget, QIcon(pixmap), agentInfo['name'])
         self.files.append(filepath)
+
+    def delete_agent(self, filepath):
+        widget = self.currentWidget()
+        try:
+            os.remove(filepath)
+        except Exception as e:
+            msgPopup = MessagePopup(
+                f"Couldn't delete '{filepath}':\n{e}", "red", self
+            )
+            msgPopup.finished.connect(msgPopup.deleteLater)
+            msgPopup.open()
+            return
+        self.removeItem(self.currentIndex())
+        self.files.remove(filepath)
+        widget.deleteLater()
+
+    def copy_agent(self, srcFile, destFile):
+        try:
+            agent = self.factory.agent_from_file(srcFile)
+            agent.save_to_file(destFile)
+        except Exception as e:
+            msgPopup = MessagePopup(
+                f"Couldn't copy the agent:\n{e}", "red", self
+            )
+            msgPopup.finished.connect(msgPopup.deleteLater)
+            msgPopup.open()
+            return
+        self.add_agent(destFile)

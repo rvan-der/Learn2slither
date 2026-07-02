@@ -13,28 +13,28 @@ class State:
         self.row = row
         self.col = col
         self.status = status
-        self.headX = row.find(Tl.HEAD)
-        self.headY = col.find(Tl.HEAD)
-        # a scaled value of the space between the head and the view
-        # self.space = {}
-        # the first non empty tile ahead in each direction
-        self.view = {
-            Dr.LEFT: self.left_view(),
-            Dr.RIGHT: self.right_view(),
-            Dr.UP: self.up_view(),
-            Dr.DOWN: self.down_view()
-        }
-        self.neighbors = {
-            Dr.LEFT: self.row[self.headX - 1],
-            Dr.RIGHT: self.row[self.headX + 1],
-            Dr.UP: self.col[self.headY - 1],
-            Dr.DOWN: self.col[self.headY + 1]
-        }
-        self.key = self.encode()
+        if self.status == St.DEAD:
+            self.key = "DEAD"
+        if self.status != St.DEAD:
+            self.headX = row.find(Tl.HEAD)
+            self.headY = col.find(Tl.HEAD)
+            self.view = {  # the first non empty tile ahead in each direction
+                Dr.LEFT: self.left_view(),
+                Dr.RIGHT: self.right_view(),
+                Dr.UP: self.up_view(),
+                Dr.DOWN: self.down_view()
+            }
+            self.neighbors = {
+                Dr.LEFT: self.row[self.headX - 1],
+                Dr.RIGHT: self.row[self.headX + 1],
+                Dr.UP: self.col[self.headY - 1],
+                Dr.DOWN: self.col[self.headY + 1]
+            }
+            self.key = self.encode()
 
     # This encoding serves to reduce and compress the information of states.
-    # It significantly reduces the number of possible states while providing
-    # useful information for a state initialization strategy in the Q-Table.
+    # It significantly reduces the number of possible states while still
+    # providing useful information.
     # Keys in json format must be strings but even if we used only 1 character
     # per field, every key would be 8 chars long. By encoding each field
     # on a few bits, or-ing them into a number and then converting that
@@ -42,15 +42,18 @@ class State:
     # the models' file.
     # key code:
     # viewL | viewR | viewU | viewD | spaceL | spaceR | spaceU | spaceD
-    # Every view field is 2 bits wide (4 possible values).
-    # Every space field is 1 bits wide (2 possible values).
-    # total: 4 * 2 + 4 * 1 = 12 bits (4095 or 4 chars at most)
+    # Every view field is 2 bits wide
+    # (4 possible values: red, green, body, wall).
+    # Every space field is 1 bits wide (2 possible values: yes, no).
+    # total: 4 * 2 + 4 * 1 = 12 bits (4095 at most so 4 chars or less)
+    # The real size of the state space is 2304 (substract the impossible
+    # states, ie. more than 1 red apple or more than 2 green apples)
     def encode(self):
         viewCodes = {
-            Tl.WALL: 0,
-            Tl.BODY: 1,
-            Tl.RED: 2,
-            Tl.GREEN: 3
+            Tl.BODY: 0,
+            Tl.RED: 1,
+            Tl.GREEN: 2,
+            Tl.WALL: 3
         }
         key = viewCodes[self.view[Dr.LEFT]] << 10
         key |= viewCodes[self.view[Dr.RIGHT]] << 8
@@ -100,6 +103,8 @@ class State:
         return self.col[self.headY + i]
 
     def __str__(self):
+        if self.status == St.DEAD:
+            return "DEAD"
         s = ''
         width = self.headX + 1
         for v in self.col:
@@ -134,7 +139,7 @@ class Environment(QObject):
     def is_oob(self, position):  # oob = out of bounds
         x, y = position
         return y < 1 or y > 10 or x < 1 or x > 10
-    
+
     def set_display_on(self, displayOn):
         self.displayOn = displayOn
         if displayOn is True and self.board is not None:
@@ -262,13 +267,15 @@ class Environment(QObject):
             self.cellUpdate.emit(position[0], position[1], tile)
 
     def get_state(self):
+        if self.status == St.DEAD:
+            return State('', '', St.DEAD)
         x, y = self.snake[0]
         row = ''.join(self.board[y])
         col = ''.join(self.board[i][x] for i in range(12))
         return State(row, col, self.status)
 
     def get_reward(self, reward_struct):
-        return reward_struct.get(self.status, len(self.snake))
+        return reward_struct.get_from_status(self.status)
 
 
 if __name__ == "__main__":

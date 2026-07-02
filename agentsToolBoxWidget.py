@@ -1,5 +1,4 @@
 from uiElements import (SubtitleLine, MessagePopup)
-from enums import Status as St
 from agent import AgentFactory
 from PySide6.QtWidgets import (QWidget, QSizePolicy, QGridLayout,
                                QPushButton, QLabel, QSpinBox,
@@ -23,22 +22,11 @@ QDialog {border: 2px ridge grey}""")
         tdnLabel.setToolTip("Temporal difference degree")
         alphaLabel = QLabel("alpha:")
         alphaLabel.setToolTip("Learning rate")
-        epsilonLabel = QLabel("epsilon:")
-        epsilonLabel.setToolTip("Exploration rate")
         gammaLabel = QLabel("gamma:")
         gammaLabel.setToolTip("Discount factor")
 
-        targetLenLabel = QLabel("target length:")
-        targetLenLabel.setToolTip(
-            """The snake's length after which the
-penalty isn't applied anymore.""")
-        penaltyLabel = QLabel("penalty:")
-        penaltyLabel.setToolTip(
-            """This penalty is applied to all scores except for green
-while the snake is under the target length.""")
-
         mainLayout = QGridLayout()
-        mainLayout.setContentsMargins(20, 20, 20, 20)
+        mainLayout.setContentsMargins(30, 30, 30, 30)
         mainLayout.setSpacing(20)
         mainLayout.addWidget(
             SubtitleLine("Learning parameters"),
@@ -51,22 +39,20 @@ while the snake is under the target length.""")
             1, 1,
             alignment=Qt.AlignLeft
         )
+        mainLayout.addItem(QSpacerItem(
+            25, 0,
+            QSizePolicy.Fixed, QSizePolicy.Preferred
+        ), 1, 2)
         mainLayout.addWidget(alphaLabel, 1, 3, alignment=Qt.AlignRight)
         mainLayout.addWidget(
             QLabel(f"{info['alpha']}"),
             1, 4,
             alignment=Qt.AlignLeft
         )
-        mainLayout.addWidget(epsilonLabel, 2, 0, alignment=Qt.AlignRight)
-        mainLayout.addWidget(
-            QLabel(f"{info['epsilon']}"),
-            2, 1,
-            alignment=Qt.AlignLeft
-        )
-        mainLayout.addWidget(gammaLabel, 2, 3, alignment=Qt.AlignRight)
+        mainLayout.addWidget(gammaLabel, 2, 0, alignment=Qt.AlignRight)
         mainLayout.addWidget(
             QLabel(f"{info['gamma']}"),
-            2, 4,
+            2, 1,
             alignment=Qt.AlignLeft
         )
         mainLayout.addItem(QSpacerItem(
@@ -105,16 +91,6 @@ while the snake is under the target length.""")
         mainLayout.addWidget(
             QLabel(f"{info['red']}"),
             6, 4, alignment=Qt.AlignLeft
-        )
-        mainLayout.addWidget(targetLenLabel, 7, 0, alignment=Qt.AlignLeft)
-        mainLayout.addWidget(
-            QLabel(f"{info['target_len']}"),
-            7, 1, alignment=Qt.AlignRight
-        )
-        mainLayout.addWidget(penaltyLabel, 7, 3, alignment=Qt.AlignLeft)
-        mainLayout.addWidget(
-            QLabel(f"{info['penalty']}"),
-            7, 4, alignment=Qt.AlignRight
         )
 
         self.setLayout(mainLayout)
@@ -278,9 +254,13 @@ file: {self.filepath}""",
             QDialogButtonBox.Ok | QDialogButtonBox.Cancel,
             "/!\\ Attention /!\\"
         )
-        msgPopup.accepted.connect(self.toolBox.deleteAgentSignal.emit)
+        msgPopup.accepted.connect(self.delete_accepted)
         msgPopup.finished.connect(msgPopup.deleteLater)
         msgPopup.open()
+
+    @Slot()
+    def delete_accepted(self):
+        self.toolBox.delete_agent(self.filepath)
 
     @Slot()
     def select_file(self):
@@ -292,7 +272,7 @@ file: {self.filepath}""",
         dialog.open()
 
     def copy_file(self, destFile):
-        self.toolBox.copyAgentSignal.emit(self.filepath, destFile)
+        self.toolBox.copy_agent(self.filepath, destFile)
 
     @Slot()
     def model_info(self):

@@ -9,9 +9,8 @@ from agentsToolBox import AgentsToolBox
 from playerWidget import PlayerWidget
 from uiElements import MessagePopup
 from agentCreationDialog import AgentCreationDialog
-from PySide6.QtWidgets import (QApplication, QMainWindow, QMenu)
+from PySide6.QtWidgets import (QApplication, QMainWindow)
 from PySide6.QtCore import (Signal, Slot, QThreadPool)
-from PySide6.QtGui import QAction
 
 
 class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
@@ -48,8 +47,6 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
         self.agentsToolBox.currentChanged.connect(self.set_agent_color)
         self.agentsToolBox.trainAgentSignal.connect(self.train_agent)
         self.agentsToolBox.playAgentSignal.connect(self.play_agent)
-        self.agentsToolBox.copyAgentSignal.connect(self.copy_agent)
-        self.agentsToolBox.deleteAgentSignal.connect(self.delete_agent)
         self.createAgentButton.clicked.connect(self.create_agent)
         self.displayOnAction.toggled.connect(self.change_display_on)
         self.printOnAction.toggled.connect(self.change_print_on)
@@ -76,7 +73,7 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
     @Slot(bool)
     def change_print_on(self, printOn):
         self.printOn = printOn
-        if printOn == False:
+        if printOn is False:
             self.stdoutTextEdit.clear()
         self.printOnChanged.emit(printOn)
 
@@ -89,40 +86,7 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
                     self.agentsToolBox.add_agent(filepath)
 
     def populate(self):
-        self.import_folder(
-            "/sgoinfre/goinfre/Perso/rvan-der/Learn2Slither/agents"
-        )
-        self.import_folder("~/.local/Learn2Slither/agents")
-
-    @Slot(str, str)
-    def copy_agent(self, srcFile, destFile):
-        agent = self.factory.agent_from_file(srcFile)
-        try:
-            agent.save_to_file(destFile)
-        except Exception as e:
-            msgPopup = MessagePopup(
-                f"Couldn't copy the agent:\n{e}", "red", self
-            )
-            msgPopup.finished.connect(msgPopup.deleteLater)
-            msgPopup.open()
-            return
-        self.agentsToolBox.add_agent(destFile)
-
-    @Slot()
-    def delete_agent(self):
-        widget = self.agentsToolBox.currentWidget()
-        try:
-            os.remove(widget.filepath)
-        except Exception as e:
-            msgPopup = MessagePopup(
-                f"Couldn't delete '{widget.filepath}':\n{e}",
-                parent=self
-            )
-            msgPopup.finished.connect(msgPopup.deleteLater)
-            msgPopup.open()
-            return
-        self.agentsToolBox.removeItem(self.agentsToolBox.currentIndex())
-        widget.deleteLater()
+        self.import_folder(AgentFactory.default_folder())
 
     @Slot()
     def create_agent(self):

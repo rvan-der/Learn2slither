@@ -22,10 +22,10 @@ class AgentFactory:
             cls.instance = super(AgentFactory, cls).__new__(cls)
         return cls.instance
 
-    def new(self, td_n=2, epsilon=0.5, alpha=0.1, gamma=0.9, rewards=None,
-            name=None, color=None, filepath=None):
+    def new(self, td_n=2, alpha=0.1, gamma=0.9, kappa=0.01, epsilon=0.001,
+            rewards=None, name=None, color=None, filepath=None):
         agent = Agent()
-        agent.set_learning_params(td_n, epsilon, alpha, gamma)
+        agent.set_learning_params(td_n, alpha, gamma, kappa, epsilon)
         if rewards is not None:
             agent.set_reward_struct(rewards)
         agent.set_name(self.random_name() if name is None else name)
@@ -49,8 +49,6 @@ class AgentFactory:
 
     def agent_from_data(self, data):
         agent = Agent()
-        agent.rewardStruct.set_target_len(data['target_len'])
-        agent.rewardStruct.set_penalty(data['penalty'])
         agent.rewardStruct.set_rewards(
             data['alive'],
             data['dead'],
@@ -59,12 +57,12 @@ class AgentFactory:
         )
         agent.set_learning_params(
             data['td_n'],
-            data['epsilon'],
             data['alpha'],
-            data['gamma']
+            data['gamma'],
+            data['kappa'],
+            data['epsilon']
         )
         agent.qtable.set_table(data['qtable'])
-        agent.qtable.set_rewards(agent.rewardStruct.rewards)
         agent.set_name(data['name'])
         agent.set_color(data['color'])
         agent.sessions = data['sessions']
@@ -74,14 +72,16 @@ class AgentFactory:
         return self.agent_from_data(self.data_from_file(filepath))
 
     @staticmethod
+    def default_folder():
+        return os.path.expanduser("~/.local/Learn2Slither/agents")
+
+    @staticmethod
     def default_filepath(name):
-        dir = "/sgoinfre/goinfre/Perso/rvan-der"
-        if not os.path.exists(dir):
-            dir = os.path.expanduser("~/.local")
-        path = f"{dir}/Learn2Slither/agents/{name}.l2s"
+        folder = AgentFactory.default_folder()
+        path = f"{folder}/{name}.l2s"
         i = 1
         while os.path.exists(path):
-            path = f"{dir}/Learn2Slither/agents/{name}({i}).l2s"
+            path = f"{folder}/{name}({i}).l2s"
             i += 1
         return path
 
@@ -113,9 +113,8 @@ class AgentFactory:
         return name.title() + str(random.randint(1, 999))
 
     def validate_file(self, data):
-        keys = {'name', 'color', 'td_n', 'alpha', 'epsilon', 'gamma',
-                'alive', 'dead', 'green', 'red', 'target_len',
-                'penalty', 'sessions', 'qtable'}
+        keys = {'name', 'color', 'td_n', 'alpha', 'gamma', 'kappa', 'epsilon',
+                'alive', 'dead', 'green', 'red', 'sessions', 'qtable'}
         if not isinstance(data, dict) or set(data.keys()) != keys:
             raise ValueError("Wrong data type.")
 
@@ -137,21 +136,27 @@ class AgentFactory:
 
         if not isinstance(data['alpha'], float) \
                 and not isinstance(data['alpha'], int) \
-                or data['alpha'] < 0 \
+                or data['alpha'] <= 0 \
                 or data['alpha'] > 1:
             raise ValueError("Wrong value for alpha.")
+
+        if not isinstance(data['gamma'], float) \
+                and not isinstance(data['gamma'], int) \
+                or data['gamma'] <= 0 \
+                or data['gamma'] > 1:
+            raise ValueError("Wrong value for gamma.")
+
+        if not isinstance(data['kappa'], float) \
+                and not isinstance(data['kappa'], int) \
+                or data['kappa'] <= 0 \
+                or data['kappa'] > 1:
+            raise ValueError("Wrong value for kappa.")
 
         if not isinstance(data['epsilon'], float) \
                 and not isinstance(data['epsilon'], int) \
                 or data['epsilon'] < 0 \
                 or data['epsilon'] > 1:
             raise ValueError("Wrong value for epsilon.")
-
-        if not isinstance(data['gamma'], float) \
-                and not isinstance(data['gamma'], int) \
-                or data['gamma'] < 0 \
-                or data['gamma'] > 1:
-            raise ValueError("Wrong value for gamma.")
 
         if not isinstance(data['alive'], float) \
                 and not isinstance(data['alive'], int) \
@@ -173,17 +178,6 @@ class AgentFactory:
                 or data['red'] < -100 or data['red'] >= 0:
             raise ValueError("Wrong value for red reward.")
 
-        if not isinstance(data['target_len'], int) \
-                or data['target_len'] < 0 \
-                or data['target_len'] > 100:
-            raise ValueError("Wrong value for target length.")
-
-        if not isinstance(data['penalty'], float) \
-                and not isinstance(data['penalty'], int) \
-                or data['penalty'] < -100 \
-                or data['penalty'] > 0:
-            raise ValueError("Wrong value for penalty.")
-
         if not isinstance(data['sessions'], int) \
                 or data['sessions'] < 0:
             raise ValueError("Wrong value for number of sessions")
@@ -195,9 +189,12 @@ class AgentFactory:
                 raise ValueError(
                     "Wrong data type for state key inside qtable."
                 )
-            if len(state) > 5 or not all(c in "0123456789" for c in state):
+            if state != "DEAD" and\
+                    (len(state) > 4
+                        or not all(c in "0123456789" for c in state)
+                        or int(state) > 4095):
                 raise ValueError("Wrong state key format inside qtable.")
-            if not isinstance(actions, list) or len(actions) != 4:
+            if not isinstance(actions, list) or len(actions) != 5:
                 raise ValueError("Wrong data type for actions inside qtable.")
             if not all(isinstance(a, int) or isinstance(a, float)
                        for a in actions):
@@ -209,24 +206,42 @@ class Agent():
     def __init__(self):
         super().__init__()
         # td_n: temporal difference degree
-        # epsilon: exploration rate
         # alpha: learning rate
         # gamma: discount factor
+        # kappa: temperature scheduling factor
         self.td_n = 0
-        self.epsilon = 0.5
         self.alpha = 0.1
         self.gamma = 0.9
+        self.kappa = 0.01
+        self.epsilon = 0.001
         self.qtable = QTable()
         self.rewardStruct = RewardStructure()
         self.name = "Noname"
         self.sessions = 0
         self.color = [0, 0, 0]
 
-    def set_learning_params(self, td_n, epsilon, alpha, gamma):
+    def set_learning_params(self, td_n, alpha, gamma, kappa, epsilon):
+        err_msg = """Learning parameters must follow these constraints:
+       td_n   >= 0
+1  >=  alpha  >  0
+1  >=  gamma  >  0
+1  >=  kappa  >  0
+1  >= epsilon >= 0"""
+        if td_n < 0:
+            raise ValueError(err_msg)
+        if alpha > 1 or alpha <= 0:
+            raise ValueError(err_msg)
+        if gamma > 1 or gamma <= 0:
+            raise ValueError(err_msg)
+        if kappa > 1 or kappa <= 0:
+            raise ValueError(err_msg)
+        if epsilon > 1 or epsilon < 0:
+            raise ValueError(err_msg)
         self.td_n = td_n
-        self.epsilon = epsilon
         self.alpha = alpha
         self.gamma = gamma
+        self.kappa = kappa
+        self.epsilon = epsilon
 
     def set_reward_struct(self, rewardStruct):
         self.rewardStruct = rewardStruct
@@ -242,20 +257,37 @@ class Agent():
 
     def choose_action(self, state, training=True):
         if training:
+            if random.random() < self.epsilon:
+                return random.choice(list(Dr))
             return self.softmax_action(state)
         return self.best_action(state)
 
     def best_action(self, state):
-        qValues = self.qtable.get_state_values(state)
+        qValues = self.qtable.get_qvalues(state)
         max_q = max(qValues)
-        return random.choice([a for a in Dr if qValues[a] == max_q])
+        tolerance = math.log(0.000001 + max_q - min(qValues))
+        return random.choice(
+            [a for a in Dr
+             if qValues[a] == max_q or max_q - qValues[a] < tolerance]
+        )
 
     def softmax_action(self, state):
-        qValues = self.qtable.get_state_values(state)
-        base = 0.1
-        expQValues = [math.exp(q * base) for q in qValues]
-        probs = [eq / sum(expQValues) for eq in expQValues]
-        return random.choices(list(Dr), weights=probs)[0]
+        stateValues = self.qtable.get_state_values(state)
+
+        qValues = stateValues[:4]
+        # To avoid math.exp overflow
+        scale = max(1, max([abs(q) for q in qValues]))
+        qValues = [q / scale for q in qValues]
+
+        visits = stateValues[4]
+        beta = 0.00000001 + self.kappa * visits  # Inverse temperature
+        # print(f'b: {beta}, "{state.key}": [{qValues[0]}, {qValues[1]}, {qValues[2]}, {qValues[3]}, {visits}]')
+
+        expQValues = [math.exp(beta * q) for q in qValues]
+        expSum = sum(expQValues)
+
+        distribution = [expQ / expSum for expQ in expQValues]
+        return random.choices(list(Dr), weights=distribution)[0]
 
     def random_action(self):
         return random.choice(list(Dr))
@@ -266,14 +298,13 @@ class Agent():
             'color': self.color,
             'td_n': self.td_n,
             'alpha': self.alpha,
-            'epsilon': self.epsilon,
             'gamma': self.gamma,
+            'kappa': self.kappa,
+            'epsilon': self.epsilon,
             'alive': self.rewardStruct.rewards[St.ALIVE],
             'dead': self.rewardStruct.rewards[St.DEAD],
             'green': self.rewardStruct.rewards[St.GREEN],
             'red': self.rewardStruct.rewards[St.RED],
-            'target_len': self.rewardStruct.target_len,
-            'penalty': self.rewardStruct.penalty,
             'sessions': self.sessions
         }
 

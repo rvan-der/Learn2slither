@@ -108,7 +108,7 @@ class Interpreter(QRunnable):
                 print(f"Episode {e + 1}/{self.sessions}\n")
 
             episode = []
-            while self.env.status != St.DEAD and not self.canceled:
+            while not self.canceled:
                 while self.paused and not self.singleStep \
                         and not self.canceled:
                     continue
@@ -116,9 +116,12 @@ class Interpreter(QRunnable):
                     break
                 self.singleStep = False
                 state = self.env.get_state()
-                action = agent.choose_action(state)
-                self.env.move_snake(action)
-                reward = self.env.get_reward(agent.rewardStruct)
+                action = None
+                reward = 0
+                if state.status != St.DEAD:
+                    action = agent.choose_action(state)
+                    self.env.move_snake(action)
+                    reward = self.env.get_reward(agent.rewardStruct)
                 episode.append({'state': state,
                                 'action': action,
                                 'reward': reward})
@@ -127,13 +130,15 @@ class Interpreter(QRunnable):
                     print(f"{str(action)}")
                 if self.displayOn:
                     time.sleep(self.delay)
+                if state.status == St.DEAD:
+                    break
 
             if self.canceled:
                 break
 
             totalRewards = sum(step['reward'] for step in episode)
             length = len(self.env.snake)
-            timeAlive = len(episode)
+            timeAlive = len(episode) - 1
             if totalRewards > maxRewards:
                 maxRewards = totalRewards
             if length > maxLength:
@@ -149,23 +154,23 @@ class Interpreter(QRunnable):
                 print("\nUpdating Q-values...")
 
             # update Q-values
-            for k, step in enumerate(episode):
-                s = step['state']
-                a = step['action']
-                r = step['reward']
-                q_old = agent.qtable.get_qvalue(s, a)
-                td_target = r
-                i = 1
-                while i < agent.td_n + 1 and k + i < len(episode) - 1:
-                    td_target += (agent.gamma ** i) * episode[k + i]['reward']
+            for k, step in enumerate(episode[:-1]):
+                # print("\n")
+                q_old = agent.qtable.get_qvalue(step['state'], step['action'])
+                g = agent.gamma
+                td_target = 0
+                i = 0
+                while i <= agent.td_n and k + i < len(episode) - 1:
+                    td_target += g**i * episode[k + i]['reward']
+                    # print(f'reward[k({k})+i({i}))] = {episode[k + i]['reward']}')
                     i += 1
-                if k + i < len(episode):
-                    s_ki = episode[k + i]['state']
-                    q_max = max(agent.qtable.get_state_values(s_ki))
-                    td_target += (agent.gamma ** i) * q_max
+                s_ki = episode[k + i]['state']
+                td_target += g**i * max(agent.qtable.get_qvalues(s_ki))
+                # print(f'maxA[k({k})+i({i}))] = {max(agent.qtable.get_qvalues(s_ki))}')
                 td_error = td_target - q_old
                 q_new = q_old + agent.alpha * td_error
-                agent.qtable.set_qvalue(s, a, q_new)
+                # print(f"\nq_old = {q_old}\ntd_target = {td_target}\ntd_error = {td_error}\nalpha = {agent.alpha}\nq_new = {q_new}")
+                agent.qtable.set_qvalue(step['state'], step['action'], q_new)
 
             agent.increment_sessions()
             progress += 1
@@ -232,6 +237,7 @@ Max rewards: {maxRewards}
                 total_reward += self.env.get_reward(agent.rewardStruct)
                 time_alive += 1
                 if self.printOn:
+                    print(f'stateValues: [{", ".join(map(str, agent.qtable.get_state_values(state)))}]')
                     print(f"\n{state}")
                     print(f"{str(action)}")
                 if self.displayOn:
@@ -267,22 +273,20 @@ Max rewards: {maxRewards}
     @staticmethod
     def play_stats_message(progress, rewards, lengths, times):
         st = Interpreter.play_stats(progress, rewards, lengths, times)
-        sepLine = "--------|" + "-----------|" * 5
+        sepLine = "--------|" + "-----------|" * 4
         msg = f"games: {st['games']}\n" + " " * 8
-        msg += f"""|   total   |    min    |    max    |   mean    \
-|  median   |
+        msg += f"""|    min    |  median   |   mean    |    max    |
 {sepLine}
-rewards |     /     | {st['minimum']['reward']:<10}| \
-{st['maximum']['reward']:<10}| {st['mean']['reward']:<10}| \
-{st['median']['reward']:<10}|
+rewards | {st['minimum']['reward']:<10}| {st['median']['reward']:<10}| \
+{st['mean']['reward']:<10}| {st['maximum']['reward']:<10}|
 {sepLine}
-lengths | {st['total']['length']:<10}| {st['minimum']['length']:<10}| \
-{st['maximum']['length']:<10}| {st['mean']['length']:<10}| \
-{st['median']['length']:<10}|
+lengths | {st['minimum']['length']:<10}| {st['median']['length']:<10}| \
+{st['mean']['length']:<10}| {st['maximum']['length']:<10}|
 {sepLine}
-times   | {st['total']['time']:<10}| {st['minimum']['time']:<10}| \
-{st['maximum']['time']:<10}| {st['mean']['time']:<10}| \
-{st['median']['time']:<10}|"""
+times   | {st['minimum']['time']:<10}| {st['median']['time']:<10}| \
+{st['mean']['time']:<10}| {st['maximum']['time']:<10}|
+
+length < 10 : {st["tooSmall"]}"""
         return msg
 
     @staticmethod
@@ -309,4 +313,5 @@ times   | {st['total']['time']:<10}| {st['minimum']['time']:<10}| \
         stats['mean']['reward'] = round(stats['total']['reward'] / progress, 2)
         stats['mean']['length'] = round(stats['total']['length'] / progress, 2)
         stats['mean']['time'] = round(stats['total']['time'] / progress, 2)
+        stats['tooSmall'] = len([l for l in lengths if l < 10])
         return stats
