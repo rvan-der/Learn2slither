@@ -206,9 +206,11 @@ class Environment(QObject):
                 self.change_cell(pos, Tl.BODY)
 
     def place_apple(self, apple):
-        pos = random.choice([(x, y) for y in range(10)
-                            for x in range(10)
-                            if self.board[y][x] == Tl.EMPTY])
+        empty = [(x, y) for y in range(1, 11) for x in range(1, 11)
+                 if self.board[y][x] == Tl.EMPTY]
+        if len(empty) == 0:
+            return
+        pos = random.choice(empty)
         self.change_cell(pos, apple)
 
     def move_snake(self, direction):
