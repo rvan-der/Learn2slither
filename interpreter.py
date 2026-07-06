@@ -8,12 +8,13 @@ from PySide6.QtCore import (QObject, QRunnable, Signal, Slot)
 
 class InterpreterSignals(QObject):
     progressMade = Signal(int)
+    timerUpdate = Signal(int)
     trainingFinished = Signal(int, float, int, int)
     playSessionFinished = Signal(int, list, list, list)
 
 
 class Interpreter(QRunnable):
-    def __init__(self, filepath, sessions, train, outfile=None):
+    def __init__(self, filepath, sessions, train=True, outfile=None):
         super().__init__()
         self.sigs = InterpreterSignals()
         self.env = Environment(displayOn=False)
@@ -99,6 +100,7 @@ class Interpreter(QRunnable):
             self.env.new_game()
 
             if self.displayOn:
+                self.sigs.timerUpdate.emit(0)
                 time.sleep(self.delay)
 
             if self.printOn:
@@ -108,6 +110,7 @@ class Interpreter(QRunnable):
                 print(f"Episode {e + 1}/{self.sessions}\n")
 
             episode = []
+            timer = 0
             while not self.canceled:
                 while self.paused and not self.singleStep \
                         and not self.canceled:
@@ -125,10 +128,12 @@ class Interpreter(QRunnable):
                 episode.append({'state': state,
                                 'action': action,
                                 'reward': reward})
+                timer += 1
                 if self.printOn:
                     print(f"\n{state}")
                     print(f"{str(action)}")
                 if self.displayOn:
+                    self.sigs.timerUpdate.emit(timer)
                     time.sleep(self.delay)
                 if state.status == St.DEAD:
                     break
@@ -155,21 +160,17 @@ class Interpreter(QRunnable):
 
             # update Q-values
             for k, step in enumerate(episode[:-1]):
-                # print("\n")
                 q_old = agent.qtable.get_qvalue(step['state'], step['action'])
                 g = agent.gamma
                 td_target = 0
                 i = 0
                 while i <= agent.td_n and k + i < len(episode) - 1:
                     td_target += g**i * episode[k + i]['reward']
-                    # print(f'reward[k({k})+i({i}))] = {episode[k + i]['reward']}')
                     i += 1
                 s_ki = episode[k + i]['state']
                 td_target += g**i * max(agent.qtable.get_qvalues(s_ki))
-                # print(f'maxA[k({k})+i({i}))] = {max(agent.qtable.get_qvalues(s_ki))}')
                 td_error = td_target - q_old
                 q_new = q_old + agent.alpha * td_error
-                # print(f"\nq_old = {q_old}\ntd_target = {td_target}\ntd_error = {td_error}\nalpha = {agent.alpha}\nq_new = {q_new}")
                 agent.qtable.set_qvalue(step['state'], step['action'], q_new)
 
             agent.increment_sessions()
@@ -178,18 +179,21 @@ class Interpreter(QRunnable):
                 self.sigs.progressMade.emit(agent.sessions)
             self.sendProgressNow = False
 
+        self.sigs.progressMade.emit(agent.sessions)
+
         if self.printOn:
             print("\n########################################\n")
-            print("Training finished !\n")
-            if progress > 0:
-                print(f"""   Sessions: {progress}
+        print("\nTraining finished !\n")
+        if progress > 0:
+            print(f"""   Sessions: {progress}
 Max rewards: {maxRewards}
  Max length: {maxLength}
    Max time: {maxTime}""")
-            else:
-                print("0 sessions completed. No results to show.")
+        else:
+            print("0 sessions completed. No results to show.")
 
-        self.sigs.progressMade.emit(agent.sessions)
+        if self.displayOn:
+            self.sigs.progressMade.emit(agent.sessions)
         agent.save_to_file(
             self.filepath if self.outfile is None else self.outfile
         )
@@ -220,11 +224,13 @@ Max rewards: {maxRewards}
                 print(f"Game {e + 1}/{self.sessions}\n")
 
             if self.displayOn:
+                self.sigs.timerUpdate.emit(0)
                 time.sleep(self.delay)
 
-            total_reward = 0
-            time_alive = 0
-            while self.env.status != St.DEAD and not self.canceled:
+            totalReward = 0
+            timeAlive = 0
+            while self.env.status != St.DEAD and not self.canceled \
+                    and timeAlive < 5000:
                 while self.paused and not self.singleStep \
                         and not self.canceled:
                     continue
@@ -234,36 +240,36 @@ Max rewards: {maxRewards}
                 state = self.env.get_state()
                 action = agent.choose_action(state, training=False)
                 self.env.move_snake(action)
-                total_reward += self.env.get_reward(agent.rewardStruct)
-                time_alive += 1
+                totalReward += self.env.get_reward(agent.rewardStruct)
+                timeAlive += 1
                 if self.printOn:
-                    print(f'stateValues: [{", ".join(map(str, agent.qtable.get_state_values(state)))}]')
+                    self.sigs.timerUpdate.emit(timeAlive)
                     print(f"\n{state}")
                     print(f"{str(action)}")
                 if self.displayOn:
                     time.sleep(self.delay)
             if self.canceled:
                 break
-            rewards.append(total_reward)
+            rewards.append(totalReward)
             lengths.append(len(self.env.snake))
-            times.append(time_alive)
+            times.append(timeAlive)
             progress += 1
 
             if self.printOn:
                 print("\nGame finished")
                 print(f"final length: {len(self.env.snake)}")
-                print(f"time alive: {time_alive}")
-                print(f"total rewards: {total_reward}")
+                print(f"time alive: {timeAlive}")
+                print(f"total rewards: {totalReward}")
 
         if self.printOn:
             print("\n########################################\n")
-            print("Play session finished !\n")
-            if progress > 0:
-                print(Interpreter.play_stats_message(
-                    progress, rewards, lengths, times
-                ))
-            else:
-                print("0 games finished. No results to show.")
+        print("\nPlay session finished !\n")
+        if progress > 0:
+            print(Interpreter.play_stats_message(
+                progress, rewards, lengths, times, 5000
+            ))
+        else:
+            print("0 games finished. No results to show.")
 
         if not self.aborted:
             self.sigs.playSessionFinished.emit(
@@ -271,10 +277,10 @@ Max rewards: {maxRewards}
             )
 
     @staticmethod
-    def play_stats_message(progress, rewards, lengths, times):
-        st = Interpreter.play_stats(progress, rewards, lengths, times)
+    def play_stats_message(progress, rewards, lengths, times, timeout):
+        st = Interpreter.play_stats(progress, rewards, lengths, times, timeout)
         sepLine = "--------|" + "-----------|" * 4
-        msg = f"games: {st['games']}\n" + " " * 8
+        msg = f"games: {progress}\n" + " " * 8
         msg += f"""|    min    |  median   |   mean    |    max    |
 {sepLine}
 rewards | {st['minimum']['reward']:<10}| {st['median']['reward']:<10}| \
@@ -286,13 +292,13 @@ lengths | {st['minimum']['length']:<10}| {st['median']['length']:<10}| \
 times   | {st['minimum']['time']:<10}| {st['median']['time']:<10}| \
 {st['mean']['time']:<10}| {st['maximum']['time']:<10}|
 
-length < 10 : {st["tooSmall"]}"""
+length < 10 : {st["tooSmall"]}
+timeouts: {st["nbTimeouts"]}"""
         return msg
 
     @staticmethod
-    def play_stats(progress, rewards, lengths, times):
+    def play_stats(progress, rewards, lengths, times, timeout):
         stats = {}
-        stats['games'] = progress
         stats['total'] = {}
         stats['minimum'] = {}
         stats['maximum'] = {}
@@ -313,5 +319,6 @@ length < 10 : {st["tooSmall"]}"""
         stats['mean']['reward'] = round(stats['total']['reward'] / progress, 2)
         stats['mean']['length'] = round(stats['total']['length'] / progress, 2)
         stats['mean']['time'] = round(stats['total']['time'] / progress, 2)
-        stats['tooSmall'] = len([l for l in lengths if l < 10])
+        stats['tooSmall'] = len([sLen for sLen in lengths if sLen < 10])
+        stats['nbTimeouts'] = len([t for t in times if t == timeout])
         return stats

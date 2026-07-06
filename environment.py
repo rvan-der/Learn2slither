@@ -18,7 +18,7 @@ class State:
         if self.status != St.DEAD:
             self.headX = row.find(Tl.HEAD)
             self.headY = col.find(Tl.HEAD)
-            self.view = {  # the first non empty tile ahead in each direction
+            self.view = {
                 Dr.LEFT: self.left_view(),
                 Dr.RIGHT: self.right_view(),
                 Dr.UP: self.up_view(),
@@ -32,14 +32,6 @@ class State:
             }
             self.key = self.encode()
 
-    # This encoding serves to reduce and compress the information of states.
-    # It significantly reduces the number of possible states while still
-    # providing useful information.
-    # Keys in json format must be strings but even if we used only 1 character
-    # per field, every key would be 8 chars long. By encoding each field
-    # on a few bits, or-ing them into a number and then converting that
-    # number into a string we can save a significant number of characters in
-    # the models' file.
     # key code:
     # viewL | viewR | viewU | viewD | spaceL | spaceR | spaceU | spaceD
     # Every view field is 2 bits wide
@@ -65,41 +57,28 @@ class State:
         key |= int(self.neighbors[Dr.DOWN] == Tl.EMPTY)
         return str(key)
 
-    # def space_scaler(self, space):
-    #     if space == 0:
-    #         return 0
-    #     if space < 4:
-    #         return 1
-    #     if space < 7:
-    #         return 2
-    #     return 3
-
     def left_view(self):
         i = 1
         while self.row[self.headX - i] == Tl.EMPTY:
             i += 1
-        # self.space[Dr.LEFT] = self.space_scaler(i - 1)
         return self.row[self.headX - i]
 
     def right_view(self):
         i = 1
         while self.row[self.headX + i] == Tl.EMPTY:
             i += 1
-        # self.space[Dr.RIGHT] = self.space_scaler(i - 1)
         return self.row[self.headX + i]
 
     def up_view(self):
         i = 1
         while self.col[self.headY - i] == Tl.EMPTY:
             i += 1
-        # self.space[Dr.UP] = self.space_scaler(i - 1)
         return self.col[self.headY - i]
 
     def down_view(self):
         i = 1
         while self.col[self.headY + i] == Tl.EMPTY:
             i += 1
-        # self.space[Dr.DOWN] = self.space_scaler(i - 1)
         return self.col[self.headY + i]
 
     def __str__(self):
@@ -118,6 +97,7 @@ class State:
 class Environment(QObject):
 
     cellUpdate = Signal(int, int, Tl)
+    lengthUpdate = Signal(int)
 
     def __init__(self, initial_len=3, displayOn=False, parent=None):
         if initial_len >= 25:
@@ -143,6 +123,7 @@ class Environment(QObject):
     def set_display_on(self, displayOn):
         self.displayOn = displayOn
         if displayOn is True and self.board is not None:
+            self.update_length()
             for y in range(12):
                 for x in range(12):
                     self.cellUpdate.emit(x, y, self.board[y][x])
@@ -179,6 +160,8 @@ class Environment(QObject):
         self.place_apple(Tl.GREEN)
         self.place_apple(Tl.RED)
         self.status = St.ALIVE
+        if self.displayOn:
+            self.update_length()
 
     def closest_wall(self, position):
         x, y = position
@@ -247,6 +230,8 @@ class Environment(QObject):
         if tile == Tl.GREEN:
             self.place_apple(Tl.GREEN)
             self.status = St.GREEN
+            if self.displayOn:
+                self.update_length()
             return
         # Handle normal movement (remove tail)
         self.change_cell(self.snake.pop(), Tl.EMPTY)
@@ -258,8 +243,13 @@ class Environment(QObject):
             self.change_cell(self.snake.pop(), Tl.EMPTY)
             self.place_apple(Tl.RED)
             self.status = St.RED
+            if self.displayOn:
+                self.update_length()
             return
         self.status = St.ALIVE
+
+    def update_length(self):
+        self.lengthUpdate.emit(len(self.snake))
 
     def change_cell(self, position, tile):
         self.board[position[1]][position[0]] = tile

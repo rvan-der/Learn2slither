@@ -1,40 +1,42 @@
 # -*- coding: utf-8 -*-
 
-################################################################################
-## Form generated from reading UI file 'l2sMainWindow.ui'
-##
-## Created by: Qt User Interface Compiler version 6.11.0
-##
-## WARNING! All changes made in this file will be lost when recompiling UI file!
-################################################################################
+###############################################################################
+# Form generated from reading UI file 'l2sMainWindow.ui'
+#
+# Created by: Qt User Interface Compiler version 6.11.0
+#
+# WARNING! All changes made in this file will be lost when recompiling UI file!
+###############################################################################
 
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect,
-    QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
-    QCursor, QFont, QFontDatabase, QGradient,
-    QIcon, QImage, QKeySequence, QLinearGradient,
-    QPainter, QPalette, QPixmap, QRadialGradient,
-    QTransform)
-from PySide6.QtWidgets import (QAbstractScrollArea, QApplication, QFrame, QHBoxLayout,
-    QLabel, QMainWindow, QMenu, QMenuBar,
-    QPushButton, QScrollArea, QSizePolicy, QStatusBar,
-    QVBoxLayout, QWidget)
-import resources_rc
+
+from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect, QSize, Qt)
+from PySide6.QtGui import (QAction, QIcon, QPixmap)
+from PySide6.QtWidgets import (QAbstractScrollArea, QFrame, QHBoxLayout,
+                               QLabel, QMenu, QMenuBar, QPushButton,
+                               QScrollArea, QSizePolicy, QStatusBar,
+                               QVBoxLayout, QWidget)
+import resources_rc  # noqa
+
 
 class Ui_l2sMainWindow(object):
     def setupUi(self, l2sMainWindow):
         if not l2sMainWindow.objectName():
             l2sMainWindow.setObjectName(u"l2sMainWindow")
         l2sMainWindow.resize(900, 700)
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Minimum,
+                                 QSizePolicy.Policy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(l2sMainWindow.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            l2sMainWindow.sizePolicy().hasHeightForWidth())
         l2sMainWindow.setSizePolicy(sizePolicy)
         l2sMainWindow.setMinimumSize(QSize(900, 700))
         l2sMainWindow.setWindowTitle(u"Learn 2 slither")
-        l2sMainWindow.setStyleSheet(u"QWidget {background-color: rgb(42, 51, 59); color: rgb(230, 230, 230)} QMenuBar {background-color: rgb(35, 41, 50)} QMenu{background-color: rgb(60, 72, 90)}")
+        l2sMainWindow.setStyleSheet(
+            u"""QWidget {background-color: rgb(42, 51, 59);
+color: rgb(230, 230, 230)}
+QMenuBar {background-color: rgb(35, 41, 50)}
+QMenu{background-color: rgb(60, 72, 90)}""")
         self.displayOnAction = QAction(l2sMainWindow)
         self.displayOnAction.setObjectName(u"displayOnAction")
         self.displayOnAction.setCheckable(True)
@@ -45,10 +47,12 @@ class Ui_l2sMainWindow(object):
         self.printOnAction.setChecked(True)
         self.centralwidget = QWidget(l2sMainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Expanding,
+                                  QSizePolicy.Policy.Expanding)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.centralwidget.sizePolicy().hasHeightForWidth())
+        sizePolicy1.setHeightForWidth(
+            self.centralwidget.sizePolicy().hasHeightForWidth())
         self.centralwidget.setSizePolicy(sizePolicy1)
         self.mainHLayout = QHBoxLayout(self.centralwidget)
         self.mainHLayout.setSpacing(6)
@@ -56,22 +60,27 @@ class Ui_l2sMainWindow(object):
         self.mainHLayout.setContentsMargins(9, 9, 9, 4)
         self.centralWidgetLeft = QWidget(self.centralwidget)
         self.centralWidgetLeft.setObjectName(u"centralWidgetLeft")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Expanding,
+                                  QSizePolicy.Policy.Expanding)
         sizePolicy2.setHorizontalStretch(7)
         sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.centralWidgetLeft.sizePolicy().hasHeightForWidth())
+        sizePolicy2.setHeightForWidth(
+            self.centralWidgetLeft.sizePolicy().hasHeightForWidth())
         self.centralWidgetLeft.setSizePolicy(sizePolicy2)
-        self.centralWidgetLeft.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        self.centralWidgetLeft.setLayoutDirection(
+            Qt.LayoutDirection.LeftToRight)
         self.mainVlayoutLeft = QVBoxLayout(self.centralWidgetLeft)
         self.mainVlayoutLeft.setSpacing(6)
         self.mainVlayoutLeft.setObjectName(u"mainVlayoutLeft")
         self.mainVlayoutLeft.setContentsMargins(0, 0, 0, 0)
         self.boardFrame = QFrame(self.centralWidgetLeft)
         self.boardFrame.setObjectName(u"boardFrame")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Preferred,
+                                  QSizePolicy.Policy.Preferred)
         sizePolicy3.setHorizontalStretch(0)
         sizePolicy3.setVerticalStretch(4)
-        sizePolicy3.setHeightForWidth(self.boardFrame.sizePolicy().hasHeightForWidth())
+        sizePolicy3.setHeightForWidth(
+            self.boardFrame.sizePolicy().hasHeightForWidth())
         self.boardFrame.setSizePolicy(sizePolicy3)
         self.boardFrame.setFrameShape(QFrame.Shape.Box)
         self.boardFrame.setFrameShadow(QFrame.Shadow.Raised)
@@ -85,10 +94,12 @@ class Ui_l2sMainWindow(object):
 
         self.stdOutFrame = QFrame(self.centralWidgetLeft)
         self.stdOutFrame.setObjectName(u"stdOutFrame")
-        sizePolicy4 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        sizePolicy4 = QSizePolicy(QSizePolicy.Policy.Preferred,
+                                  QSizePolicy.Policy.Preferred)
         sizePolicy4.setHorizontalStretch(0)
         sizePolicy4.setVerticalStretch(3)
-        sizePolicy4.setHeightForWidth(self.stdOutFrame.sizePolicy().hasHeightForWidth())
+        sizePolicy4.setHeightForWidth(
+            self.stdOutFrame.sizePolicy().hasHeightForWidth())
         self.stdOutFrame.setSizePolicy(sizePolicy4)
         self.stdOutFrame.setFrameShape(QFrame.Shape.Box)
         self.stdOutFrame.setFrameShadow(QFrame.Shadow.Raised)
@@ -100,15 +111,16 @@ class Ui_l2sMainWindow(object):
 
         self.mainVlayoutLeft.addWidget(self.stdOutFrame)
 
-
         self.mainHLayout.addWidget(self.centralWidgetLeft)
 
         self.agentsFrame = QFrame(self.centralwidget)
         self.agentsFrame.setObjectName(u"agentsFrame")
-        sizePolicy5 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        sizePolicy5 = QSizePolicy(QSizePolicy.Policy.Preferred,
+                                  QSizePolicy.Policy.Preferred)
         sizePolicy5.setHorizontalStretch(4)
         sizePolicy5.setVerticalStretch(0)
-        sizePolicy5.setHeightForWidth(self.agentsFrame.sizePolicy().hasHeightForWidth())
+        sizePolicy5.setHeightForWidth(
+            self.agentsFrame.sizePolicy().hasHeightForWidth())
         self.agentsFrame.setSizePolicy(sizePolicy5)
         self.agentsFrame.setFrameShape(QFrame.Shape.Box)
         self.agentsFrame.setFrameShadow(QFrame.Shadow.Raised)
@@ -119,10 +131,12 @@ class Ui_l2sMainWindow(object):
         self.agentsFrameLayout.setContentsMargins(0, 0, 0, 0)
         self.agentsLabel = QLabel(self.agentsFrame)
         self.agentsLabel.setObjectName(u"agentsLabel")
-        sizePolicy6 = QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
+        sizePolicy6 = QSizePolicy(QSizePolicy.Policy.Ignored,
+                                  QSizePolicy.Policy.Ignored)
         sizePolicy6.setHorizontalStretch(0)
         sizePolicy6.setVerticalStretch(5)
-        sizePolicy6.setHeightForWidth(self.agentsLabel.sizePolicy().hasHeightForWidth())
+        sizePolicy6.setHeightForWidth(
+            self.agentsLabel.sizePolicy().hasHeightForWidth())
         self.agentsLabel.setSizePolicy(sizePolicy6)
         self.agentsLabel.setPixmap(QPixmap(u":/assets/snake_team_ai.jpeg"))
         self.agentsLabel.setScaledContents(True)
@@ -131,19 +145,24 @@ class Ui_l2sMainWindow(object):
 
         self.agentsScrollArea = QScrollArea(self.agentsFrame)
         self.agentsScrollArea.setObjectName(u"agentsScrollArea")
-        sizePolicy7 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        sizePolicy7 = QSizePolicy(QSizePolicy.Policy.Expanding,
+                                  QSizePolicy.Policy.Expanding)
         sizePolicy7.setHorizontalStretch(0)
         sizePolicy7.setVerticalStretch(14)
-        sizePolicy7.setHeightForWidth(self.agentsScrollArea.sizePolicy().hasHeightForWidth())
+        sizePolicy7.setHeightForWidth(
+            self.agentsScrollArea.sizePolicy().hasHeightForWidth())
         self.agentsScrollArea.setSizePolicy(sizePolicy7)
         self.agentsScrollArea.setFrameShape(QFrame.Shape.NoFrame)
         self.agentsScrollArea.setFrameShadow(QFrame.Shadow.Plain)
         self.agentsScrollArea.setLineWidth(0)
-        self.agentsScrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.agentsScrollArea.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustIgnored)
+        self.agentsScrollArea.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.agentsScrollArea.setSizeAdjustPolicy(
+            QAbstractScrollArea.SizeAdjustPolicy.AdjustIgnored)
         self.agentsScrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
-        self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
+        self.scrollAreaWidgetContents.setObjectName(
+            u"scrollAreaWidgetContents")
         self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 311, 442))
         self.agentsScrollArea.setWidget(self.scrollAreaWidgetContents)
 
@@ -151,10 +170,12 @@ class Ui_l2sMainWindow(object):
 
         self.agentButtonsWidget = QWidget(self.agentsFrame)
         self.agentButtonsWidget.setObjectName(u"agentButtonsWidget")
-        sizePolicy8 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        sizePolicy8 = QSizePolicy(QSizePolicy.Policy.Preferred,
+                                  QSizePolicy.Policy.Preferred)
         sizePolicy8.setHorizontalStretch(0)
         sizePolicy8.setVerticalStretch(0)
-        sizePolicy8.setHeightForWidth(self.agentButtonsWidget.sizePolicy().hasHeightForWidth())
+        sizePolicy8.setHeightForWidth(
+            self.agentButtonsWidget.sizePolicy().hasHeightForWidth())
         self.agentButtonsWidget.setSizePolicy(sizePolicy8)
         self.horizontalLayout_2 = QHBoxLayout(self.agentButtonsWidget)
         self.horizontalLayout_2.setSpacing(0)
@@ -162,13 +183,16 @@ class Ui_l2sMainWindow(object):
         self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.createAgentButton = QPushButton(self.agentButtonsWidget)
         self.createAgentButton.setObjectName(u"createAgentButton")
-        sizePolicy9 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        sizePolicy9 = QSizePolicy(QSizePolicy.Policy.Expanding,
+                                  QSizePolicy.Policy.Fixed)
         sizePolicy9.setHorizontalStretch(0)
         sizePolicy9.setVerticalStretch(0)
-        sizePolicy9.setHeightForWidth(self.createAgentButton.sizePolicy().hasHeightForWidth())
+        sizePolicy9.setHeightForWidth(
+            self.createAgentButton.sizePolicy().hasHeightForWidth())
         self.createAgentButton.setSizePolicy(sizePolicy9)
         icon = QIcon()
-        icon.addFile(u":/assets/create_snake_icon.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon.addFile(u":/assets/create_snake_icon.png", QSize(),
+                     QIcon.Mode.Normal, QIcon.State.Off)
         self.createAgentButton.setIcon(icon)
         self.createAgentButton.setIconSize(QSize(30, 25))
         self.createAgentButton.setAutoDefault(True)
@@ -178,21 +202,22 @@ class Ui_l2sMainWindow(object):
 
         self.importButton = QPushButton(self.agentButtonsWidget)
         self.importButton.setObjectName(u"importButton")
-        sizePolicy10 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        sizePolicy10 = QSizePolicy(QSizePolicy.Policy.Minimum,
+                                   QSizePolicy.Policy.Fixed)
         sizePolicy10.setHorizontalStretch(0)
         sizePolicy10.setVerticalStretch(0)
-        sizePolicy10.setHeightForWidth(self.importButton.sizePolicy().hasHeightForWidth())
+        sizePolicy10.setHeightForWidth(
+            self.importButton.sizePolicy().hasHeightForWidth())
         self.importButton.setSizePolicy(sizePolicy10)
         icon1 = QIcon()
-        icon1.addFile(u":/assets/import_icon.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon1.addFile(u":/assets/import_icon.png", QSize(),
+                      QIcon.Mode.Normal, QIcon.State.Off)
         self.importButton.setIcon(icon1)
         self.importButton.setIconSize(QSize(25, 25))
 
         self.horizontalLayout_2.addWidget(self.importButton)
 
-
         self.agentsFrameLayout.addWidget(self.agentButtonsWidget)
-
 
         self.mainHLayout.addWidget(self.agentsFrame)
 
@@ -215,23 +240,26 @@ class Ui_l2sMainWindow(object):
 
         self.createAgentButton.setDefault(False)
 
-
         QMetaObject.connectSlotsByName(l2sMainWindow)
     # setupUi
 
     def retranslateUi(self, l2sMainWindow):
-        self.displayOnAction.setText(QCoreApplication.translate("l2sMainWindow", u"Board display", None))
-        self.printOnAction.setText(QCoreApplication.translate("l2sMainWindow", u"Print to stdout", None))
+        self.displayOnAction.setText(QCoreApplication.translate(
+            "l2sMainWindow", u"Board display", None))
+        self.printOnAction.setText(QCoreApplication.translate(
+            "l2sMainWindow", u"Print to stdout", None))
         self.agentsLabel.setText("")
-#if QT_CONFIG(tooltip)
-        self.createAgentButton.setToolTip(QCoreApplication.translate("l2sMainWindow", u"Create a new snake", None))
-#endif // QT_CONFIG(tooltip)
+# if QT_CONFIG(tooltip)
+        self.createAgentButton.setToolTip(QCoreApplication.translate(
+            "l2sMainWindow", u"Create a new snake", None))
+# endif // QT_CONFIG(tooltip)
         self.createAgentButton.setText("")
-#if QT_CONFIG(tooltip)
-        self.importButton.setToolTip(QCoreApplication.translate("l2sMainWindow", u"Import a model file", None))
-#endif // QT_CONFIG(tooltip)
+# if QT_CONFIG(tooltip)
+        self.importButton.setToolTip(QCoreApplication.translate(
+            "l2sMainWindow", u"Import a model file", None))
+# endif // QT_CONFIG(tooltip)
         self.importButton.setText("")
-        self.menuSettings.setTitle(QCoreApplication.translate("l2sMainWindow", u"Settings", None))
+        self.menuSettings.setTitle(QCoreApplication.translate(
+            "l2sMainWindow", u"Settings", None))
         pass
     # retranslateUi
-

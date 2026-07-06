@@ -22,7 +22,7 @@ class AgentFactory:
             cls.instance = super(AgentFactory, cls).__new__(cls)
         return cls.instance
 
-    def new(self, td_n=2, alpha=0.1, gamma=0.9, kappa=0.01, epsilon=0.001,
+    def new(self, td_n=2, alpha=0.1, gamma=0.9, kappa=0.02, epsilon=0.001,
             rewards=None, name=None, color=None, filepath=None):
         agent = Agent()
         agent.set_learning_params(td_n, alpha, gamma, kappa, epsilon)
@@ -76,8 +76,9 @@ class AgentFactory:
         return os.path.expanduser("~/.local/Learn2Slither/agents")
 
     @staticmethod
-    def default_filepath(name):
-        folder = AgentFactory.default_folder()
+    def default_filepath(name, folder=None):
+        if folder is None:
+            folder = AgentFactory.default_folder()
         path = f"{folder}/{name}.l2s"
         i = 1
         while os.path.exists(path):
@@ -89,7 +90,7 @@ class AgentFactory:
     def random_color():
         color = [random.randint(0, 255) for _ in range(3)]
         if sum(color) < 100:
-            color = [c * 1.2 for c in color]
+            color = [int(c * 1.2 + 20) for c in color]
         return color
 
     @staticmethod
@@ -263,9 +264,11 @@ class Agent():
         return self.best_action(state)
 
     def best_action(self, state):
-        qValues = self.qtable.get_qvalues(state)
+        stateValues = self.qtable.get_state_values(state)
+        qValues = stateValues[0:4]
+        visits = stateValues[4]
         max_q = max(qValues)
-        tolerance = math.log(0.000001 + max_q - min(qValues))
+        tolerance = math.log1p(max_q - min(qValues) + max(10 - visits, 0))
         return random.choice(
             [a for a in Dr
              if qValues[a] == max_q or max_q - qValues[a] < tolerance]
@@ -281,7 +284,6 @@ class Agent():
 
         visits = stateValues[4]
         beta = 0.00000001 + self.kappa * visits  # Inverse temperature
-        # print(f'b: {beta}, "{state.key}": [{qValues[0]}, {qValues[1]}, {qValues[2]}, {qValues[3]}, {visits}]')
 
         expQValues = [math.exp(beta * q) for q in qValues]
         expSum = sum(expQValues)
@@ -316,8 +318,9 @@ class Agent():
     def save_to_file(self, filepath=None):
         if filepath is None or filepath == "":
             filepath = AgentFactory.default_filepath(self.name)
-
         filepath = os.path.expanduser(filepath)
+        if '/' not in filepath:
+            filepath = f"./{filepath}"
         dirname, basename = os.path.split(filepath)
 
         if basename is None or basename == "":
@@ -327,14 +330,11 @@ class Agent():
         if not basename.endswith(".l2s"):
             raise ValueError("The file must have the .l2s extension.")
 
-        if '/' not in filepath:
-            filepath = f"./{filepath}"
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
-        data = self.get_data()
         with open(filepath, 'w') as f:
-            json.dump(data, f, separators=(',', ':'))
+            json.dump(self.get_data(), f, separators=(',', ':'))
 
 
 if __name__ == "__main__":

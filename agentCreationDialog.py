@@ -28,15 +28,15 @@ class AgentCreationDialog(QDialog):
     agentCreated = Signal(str)
     factory = AgentFactory()
     defaultParams = {
-        'td_n': 0,
+        'td_n': 2,
         'alpha': 0.1,
         'gamma': 0.9,
-        'kappa': 0.01,
+        'kappa': 0.02,
         'epsilon': 0.001,
-        'alive': 0,
-        'dead': -5,
-        'green': 2,
-        'red': -2
+        'alive': -0.1,
+        'dead': -20,
+        'green': 10,
+        'red': -5
     }
 
     def __init__(self, parent=None):

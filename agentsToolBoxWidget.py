@@ -24,6 +24,10 @@ QDialog {border: 2px ridge grey}""")
         alphaLabel.setToolTip("Learning rate")
         gammaLabel = QLabel("gamma:")
         gammaLabel.setToolTip("Discount factor")
+        kappaLabel = QLabel("kappa:")
+        kappaLabel.setToolTip("Temperature scheduling factor")
+        epsilonLabel = QLabel("epsilon:")
+        epsilonLabel.setToolTip("Baseline exploration rate")
 
         mainLayout = QGridLayout()
         mainLayout.setContentsMargins(30, 30, 30, 30)
@@ -53,6 +57,22 @@ QDialog {border: 2px ridge grey}""")
         mainLayout.addWidget(
             QLabel(f"{info['gamma']}"),
             2, 1,
+            alignment=Qt.AlignLeft
+        )
+        mainLayout.addItem(QSpacerItem(
+            25, 0,
+            QSizePolicy.Fixed, QSizePolicy.Preferred
+        ), 2, 2)
+        mainLayout.addWidget(kappaLabel, 2, 3, alignment=Qt.AlignRight)
+        mainLayout.addWidget(
+            QLabel(f"{info['kappa']}"),
+            2, 4,
+            alignment=Qt.AlignLeft
+        )
+        mainLayout.addWidget(epsilonLabel, 3, 0, alignment=Qt.AlignRight)
+        mainLayout.addWidget(
+            QLabel(f"{info['epsilon']}"),
+            3, 1,
             alignment=Qt.AlignLeft
         )
         mainLayout.addItem(QSpacerItem(

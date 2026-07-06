@@ -1,6 +1,6 @@
 class QTable:
     # Each state has 5 fields: the scores of the 4 actions and a counter
-    # for the number of updates.
+    # for the number of updates in the state (for temperature scheduling).
 
     def __init__(self):
         self.table = {}
@@ -28,6 +28,3 @@ class QTable:
         # Increment the updates counter.
         # Cap at 7000 to avoid math.exp overflow in softmax function
         qValues[4] = min(qValues[4] + 1, 7000)
-
-    def get_nb_visits(self, state):
-        return self.visits[state.key]

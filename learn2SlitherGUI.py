@@ -9,7 +9,7 @@ from agentsToolBox import AgentsToolBox
 from playerWidget import PlayerWidget
 from uiElements import MessagePopup
 from agentCreationDialog import AgentCreationDialog
-from PySide6.QtWidgets import (QApplication, QMainWindow)
+from PySide6.QtWidgets import (QApplication, QMainWindow, QFileDialog)
 from PySide6.QtCore import (Signal, Slot, QThreadPool)
 
 
@@ -48,6 +48,7 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
         self.agentsToolBox.trainAgentSignal.connect(self.train_agent)
         self.agentsToolBox.playAgentSignal.connect(self.play_agent)
         self.createAgentButton.clicked.connect(self.create_agent)
+        self.importButton.clicked.connect(self.import_selection)
         self.displayOnAction.toggled.connect(self.change_display_on)
         self.printOnAction.toggled.connect(self.change_print_on)
         QApplication.instance().aboutToQuit.connect(self.abort)
@@ -77,6 +78,24 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
             self.stdoutTextEdit.clear()
         self.printOnChanged.emit(printOn)
 
+    @Slot()
+    def import_selection(self):
+        dialog = QFileDialog(self)
+        dialog.setDefaultSuffix("l2s")
+        dialog.setNameFilter("*.l2s")
+        dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptOpen)
+        dialog.setFileMode(QFileDialog.FileMode.ExistingFiles)
+        dialog.filesSelected.connect(self.import_selected)
+        dialog.open()
+
+    @Slot(list)
+    def import_selected(self, files):
+        for f in files:
+            self.import_file(f)
+
+    def import_file(self, filepath):
+        self.agentsToolBox.add_agent(filepath)
+
     def import_folder(self, folder):
         folder_path = os.path.expanduser(folder)
         if os.path.exists(folder_path) and os.path.isdir(folder_path):
@@ -86,6 +105,7 @@ class Learn2SlitherGUI(QMainWindow, Ui_l2sMainWindow):
                     self.agentsToolBox.add_agent(filepath)
 
     def populate(self):
+        self.import_folder("models")
         self.import_folder(AgentFactory.default_folder())
 
     @Slot()
@@ -119,7 +139,7 @@ Max rewards: {maxRwds}
         msg = "0 games finished. No results to show."
         if progress > 0:
             msg = Interpreter.play_stats_message(
-                progress, rewards, lengths, times
+                progress, rewards, lengths, times, 5000
             )
         self.close_session(title + msg)
 
@@ -138,6 +158,8 @@ Max rewards: {maxRwds}
         self.threadpool.start(worker)
 
         worker.env.cellUpdate.connect(self.boardWidget.update_cell)
+        worker.env.lengthUpdate.connect(self.boardWidget.set_length)
+        worker.sigs.timerUpdate.connect(self.boardWidget.set_timer)
         worker.sigs.playSessionFinished.connect(self.play_session_finished)
         worker.sigs.trainingFinished.connect(self.training_finished)
         worker.sigs.progressMade.connect(
